@@ -1,0 +1,2002 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkyWorld — Samolyotlar Olami</title>
+<meta name="description" content="SkyWorld — samolyotlar, aviatsiya tarixi va texnologiyalari haqida interaktiv o'quv loyihasi.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
+<style>
+/* ================= ASOSIY O'ZGARUVCHILAR ================= */
+:root {
+  --navy: #061630;
+  --navy-2: #0b2347;
+  --sky: #38bdf8;
+  --blue: #0284c7;
+  --green: #16a34a;
+  --red: #dc2626;
+  --amber: #f59e0b;
+  --bg: #f1f6fc;
+  --card: #ffffff;
+  --text: #10213c;
+  --muted: #5b6b85;
+  --line: #dde7f3;
+  --radius: 20px;
+  --shadow: 0 12px 34px rgba(6, 22, 48, .10);
+  --ease: cubic-bezier(.22, .9, .3, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+[id] { scroll-margin-top: 90px; }
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+body.lock { overflow: hidden; }
+img { max-width: 100%; display: block; }
+button { font: inherit; color: inherit; }
+h1, h2, h3 { line-height: 1.25; }
+
+/* ================= SCROLL PROGRESS ================= */
+.scroll-bar {
+  position: fixed; top: 0; left: 0; z-index: 100;
+  height: 3px; width: 0;
+  background: linear-gradient(90deg, var(--sky), var(--blue));
+}
+
+/* ================= YUKLANISH EKRANI ================= */
+.loader {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--navy);
+  display: grid; place-items: center;
+  transition: opacity .6s, visibility .6s;
+}
+.loader.hide { opacity: 0; visibility: hidden; }
+.loader-plane { font-size: 54px; color: var(--sky); animation: fly 1.4s ease-in-out infinite; }
+@keyframes fly {
+  0% { transform: translateX(-60px) rotate(-8deg); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateX(60px) rotate(8deg); opacity: 0; }
+}
+
+/* ================= HEADER / NAVBAR ================= */
+header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(6, 22, 48, .92);
+  backdrop-filter: blur(10px);
+  padding: 14px 6%;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 15px; color: #fff;
+  transition: padding .3s, box-shadow .3s;
+}
+header.scrolled { padding: 9px 6%; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+.logo { font-size: 26px; font-weight: 800; color: var(--sky); cursor: pointer; letter-spacing: .3px; }
+.logo span { color: #fff; }
+
+nav.desktop { display: flex; gap: 4px; position: relative; }
+nav.desktop button {
+  position: relative; z-index: 1;
+  background: transparent; border: none; color: #dbeafe;
+  font-size: 15px; padding: 9px 16px; border-radius: 10px; cursor: pointer;
+  transition: color .25s;
+}
+nav.desktop button:hover, nav.desktop button.active { color: #fff; }
+/* Faol sahifa ostida suriladigan "pill" */
+.nav-pill {
+  position: absolute; top: 0; height: 100%; left: 0; width: 0;
+  background: var(--blue); border-radius: 10px;
+  transition: left .45s var(--ease), width .45s var(--ease);
+}
+
+.burger {
+  display: none;
+  width: 44px; height: 44px; border: none; border-radius: 12px;
+  background: rgba(255,255,255,.08); cursor: pointer;
+  flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+}
+.burger span { width: 22px; height: 2px; background: #fff; border-radius: 2px; transition: transform .35s var(--ease), opacity .25s; }
+.burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.burger.open span:nth-child(2) { opacity: 0; }
+.burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ================= MOBIL MENYU ================= */
+.overlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(3, 12, 28, .6); backdrop-filter: blur(4px);
+  opacity: 0; visibility: hidden; transition: opacity .35s, visibility .35s;
+}
+.overlay.show { opacity: 1; visibility: visible; }
+.mobile-nav {
+  position: fixed; top: 0; right: 0; z-index: 70;
+  width: min(320px, 85vw); height: 100%;
+  background: var(--navy); padding: 24px 22px;
+  transform: translateX(100%); transition: transform .45s var(--ease);
+  display: flex; flex-direction: column; gap: 6px; color: #fff;
+}
+.mobile-nav.open { transform: translateX(0); }
+.mobile-nav-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.close-btn { width: 40px; height: 40px; border: none; border-radius: 10px; background: rgba(255,255,255,.08); color: #fff; font-size: 22px; cursor: pointer; }
+.mobile-nav button.link {
+  text-align: left; background: transparent; border: none; color: #dbeafe;
+  font-size: 17px; padding: 13px 14px; border-radius: 12px; cursor: pointer;
+  opacity: 0; transform: translateX(30px);
+  transition: background .2s, opacity .4s, transform .4s var(--ease);
+}
+.mobile-nav.open button.link { opacity: 1; transform: none; }
+.mobile-nav button.link:hover, .mobile-nav button.link.active { background: var(--blue); color: #fff; }
+.mobile-foot { margin-top: auto; font-size: 13px; color: #8aa3c7; border-top: 1px solid rgba(255,255,255,.1); padding-top: 16px; }
+
+/* ================= SAHIFALAR ================= */
+.page { display: none; min-height: 75vh; padding: 45px 7%; }
+.page.active { display: block; animation: pageIn .55s var(--ease); }
+@keyframes pageIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+.page-hero {
+  border-radius: var(--radius); padding: 70px 45px;
+  color: #fff; margin-bottom: 40px;
+  position: relative; overflow: hidden;
+  background-size: cover; background-position: center;
+}
+.page-hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(6,22,48,.95), rgba(6,22,48,.55)); }
+.page-hero > * { position: relative; }
+.page-hero small { color: var(--sky); font-weight: 700; letter-spacing: 2px; }
+.page-hero h1 { font-size: clamp(30px, 5vw, 48px); margin: 8px 0 10px; }
+.page-hero p { max-width: 620px; color: #cfe0f5; }
+
+/* ================= HERO KARUSEL ================= */
+.hero-slider { position: relative; height: 560px; border-radius: 26px; overflow: hidden; box-shadow: var(--shadow); }
+.slide {
+  position: absolute; inset: 0; display: flex; align-items: center; padding: 50px 90px; color: #fff;
+  opacity: 0; visibility: hidden; transition: opacity 1s, visibility 1s;
+}
+.slide.active { opacity: 1; visibility: visible; }
+.slide-bg { position: absolute; inset: 0; background-size: cover; background-position: center; transform: scale(1.12); transition: transform 7s linear; }
+.slide.active .slide-bg { transform: scale(1); }
+.slide::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, #06162ff2 8%, #06162fb0 50%, #06162f22); }
+.slide-content { position: relative; z-index: 2; max-width: 620px; }
+.slide-content > * { opacity: 0; transform: translateY(26px); transition: opacity .7s, transform .7s var(--ease); }
+.slide.active .slide-content > * { opacity: 1; transform: none; }
+.slide.active .slide-content > *:nth-child(2) { transition-delay: .15s; }
+.slide.active .slide-content > *:nth-child(3) { transition-delay: .3s; }
+.slide.active .slide-content > *:nth-child(4) { transition-delay: .45s; }
+.slide-content .tag { color: var(--sky); font-weight: 700; letter-spacing: 2px; font-size: 14px; }
+.slide-content h1 { font-size: clamp(32px, 5.4vw, 58px); margin: 10px 0 14px; }
+.slide-content p { color: #d5e4f7; font-size: 17px; margin-bottom: 26px; }
+
+.slider-arrow {
+  position: absolute; top: 50%; z-index: 5; transform: translateY(-50%);
+  width: 50px; height: 50px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.1); backdrop-filter: blur(6px);
+  color: #fff; font-size: 22px; cursor: pointer; transition: background .25s, transform .25s;
+}
+.slider-arrow:hover { background: var(--blue); transform: translateY(-50%) scale(1.08); }
+.slider-arrow.prev { left: 18px; }
+.slider-arrow.next { right: 18px; }
+.dots { position: absolute; bottom: 24px; left: 90px; z-index: 5; display: flex; gap: 8px; }
+.dots button { width: 10px; height: 10px; border-radius: 10px; border: none; background: rgba(255,255,255,.45); cursor: pointer; transition: width .4s var(--ease), background .3s; }
+.dots button.active { width: 34px; background: var(--sky); }
+.progress { position: absolute; left: 0; bottom: 0; z-index: 5; height: 4px; background: var(--sky); width: 0; }
+.progress.run { animation: progress 6s linear forwards; }
+@keyframes progress { to { width: 100%; } }
+.flying { position: absolute; z-index: 3; top: 18%; left: -80px; font-size: 34px; color: rgba(255,255,255,.75); animation: across 14s linear infinite; pointer-events: none; }
+@keyframes across { 0% { transform: translate(0, 0) rotate(-6deg); } 100% { transform: translate(calc(100vw + 160px), -60px) rotate(-6deg); } }
+
+/* ================= TUGMALAR ================= */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--blue); color: #fff;
+  border: none; padding: 13px 22px; border-radius: 12px;
+  font-weight: 700; cursor: pointer; margin: 6px 8px 6px 0;
+  position: relative; overflow: hidden;
+  transition: transform .25s, box-shadow .25s, background .25s, opacity .25s;
+}
+.btn::after {
+  content: ""; position: absolute; top: 0; left: -120%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+  transform: skewX(-20deg); transition: left .6s;
+}
+.btn:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(2,132,199,.35); }
+.btn:hover::after { left: 140%; }
+.btn:disabled { opacity: .6; cursor: wait; transform: none; }
+.btn.white { background: #fff; color: var(--navy); }
+.btn.ghost { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.4); }
+.btn.outline { background: #fff; color: var(--navy); border: 1px solid var(--line); }
+.btn.outline:hover { background: var(--navy); color: #fff; }
+/* Bosilganda to'lqin effekti */
+.ripple {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  background: rgba(255,255,255,.45); transform: scale(0);
+  animation: ripple .6s ease-out forwards;
+}
+@keyframes ripple { to { transform: scale(4); opacity: 0; } }
+
+/* ================= STATISTIKA ================= */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin: -45px 30px 0; position: relative; z-index: 6; }
+.stat { background: var(--card); padding: 26px; border-radius: 18px; box-shadow: var(--shadow); text-align: center; transition: transform .3s; }
+.stat:hover { transform: translateY(-6px); }
+.stat strong { display: block; font-size: 36px; color: var(--blue); }
+.stat p { color: var(--muted); font-size: 14px; }
+
+/* ================= SARLAVHALAR ================= */
+.section-title { text-align: center; max-width: 680px; margin: 75px auto 34px; }
+.section-title small { color: var(--blue); font-weight: 800; letter-spacing: 2px; }
+.section-title h2 { font-size: clamp(26px, 4vw, 38px); margin: 6px 0 8px; }
+.section-title p { color: var(--muted); }
+
+/* ================= KARTALAR ================= */
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.card {
+  background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+  height: 100%;
+  transition: transform .35s var(--ease), box-shadow .35s;
+}
+.card:hover { transform: translateY(-8px); box-shadow: 0 22px 44px rgba(6,22,48,.16); }
+.tilt { will-change: transform; }
+.tilt.tilting { transition: transform .08s linear, box-shadow .35s; }
+.card-img { position: relative; height: 220px; overflow: hidden; }
+.card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .7s var(--ease); }
+.card:hover .card-img img { transform: scale(1.1); }
+.img-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(6,22,48,.9), rgba(2,132,199,.35));
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .4s;
+}
+.card:hover .img-overlay { opacity: 1; }
+.img-overlay span { color: #fff; font-weight: 700; border: 1px solid #fff; padding: 9px 18px; border-radius: 30px; transform: translateY(14px); transition: transform .4s var(--ease); }
+.card:hover .img-overlay span { transform: none; }
+.badge { position: absolute; top: 14px; left: 14px; z-index: 2; background: var(--sky); color: var(--navy); font-size: 12px; font-weight: 800; padding: 4px 11px; border-radius: 20px; }
+.card-content { padding: 22px; }
+.card-content h3 { margin-bottom: 6px; }
+.card-content p { color: var(--muted); font-size: 15px; }
+.card-icon { width: 54px; height: 54px; border-radius: 14px; background: #e0f2fe; display: grid; place-items: center; font-size: 26px; margin-bottom: 14px; transition: transform .4s var(--ease); }
+.card:hover .card-icon { transform: rotate(-8deg) scale(1.1); }
+.specs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.specs span { background: #eef5fd; color: var(--navy-2); font-size: 12.5px; padding: 4px 10px; border-radius: 8px; font-weight: 600; }
+
+/* Sevimli (yurakcha) tugmasi */
+.fav {
+  position: absolute; top: 12px; right: 12px; z-index: 3;
+  width: 40px; height: 40px; border-radius: 50%; border: none;
+  background: rgba(255,255,255,.92); color: var(--red); font-size: 20px; cursor: pointer;
+  display: grid; place-items: center;
+  transition: transform .25s var(--ease);
+}
+.fav:hover { transform: scale(1.12); }
+.fav.on { animation: pop .4s var(--ease); }
+@keyframes pop { 50% { transform: scale(1.35); } }
+
+/* ================= QIDIRUV + FILTR ================= */
+.toolbar { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+.search { position: relative; flex: 1 1 260px; max-width: 380px; }
+.search input { padding-left: 44px; border-radius: 30px; background: #fff; }
+.search::before { content: "🔍"; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 15px; opacity: .6; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.filters button {
+  border: 1px solid var(--line); background: #fff; color: var(--text);
+  padding: 9px 16px; border-radius: 30px; cursor: pointer; font-weight: 600; transition: all .25s;
+}
+.filters button em { font-style: normal; font-size: 12px; background: #eef5fd; color: var(--navy-2); padding: 1px 7px; border-radius: 10px; margin-left: 4px; }
+.filters button.active, .filters button:hover { background: var(--navy); color: #fff; border-color: var(--navy); }
+.filters button.active em, .filters button:hover em { background: rgba(255,255,255,.18); color: #fff; }
+.card-wrap.hidden { display: none; }
+.empty { display: none; text-align: center; padding: 50px 20px; color: var(--muted); grid-column: 1 / -1; }
+.empty.show { display: block; }
+.empty b { display: block; font-size: 42px; }
+
+/* ================= INFO BOX ================= */
+.info-box { background: linear-gradient(135deg, var(--navy), var(--navy-2)); color: #fff; border-radius: var(--radius); padding: 40px; margin: 50px 0; }
+.info-box h2 { margin-bottom: 12px; }
+.info-box p { color: #cfe0f5; }
+
+/* ================= IKKI USTUN ================= */
+.two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+.two-columns > img { border-radius: var(--radius); box-shadow: var(--shadow); height: 100%; max-height: 420px; width: 100%; object-fit: cover; }
+.two-columns h2 { font-size: 30px; margin-bottom: 12px; }
+.two-columns p { color: var(--muted); margin-bottom: 12px; }
+.info-box.two-columns p { color: #cfe0f5; }
+.check-list { list-style: none; margin-top: 10px; }
+.check-list li { padding: 6px 0 6px 30px; position: relative; }
+.check-list li::before {
+  content: "✓"; position: absolute; left: 0; top: 9px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #dcfce7; color: var(--green); font-size: 12px; font-weight: 800;
+  display: grid; place-items: center;
+}
+
+/* ================= FORMA ELEMENTLARI ================= */
+label { display: block; font-weight: 700; margin: 14px 0 6px; font-size: 14px; }
+input, select, textarea {
+  width: 100%; padding: 13px 14px; border-radius: 12px;
+  border: 1px solid var(--line); background: #f8fbff; font: inherit; color: var(--text);
+  transition: border-color .25s, box-shadow .25s;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--sky); box-shadow: 0 0 0 4px rgba(56,189,248,.18); }
+
+/* ================= PARVOZ KALKULYATORI ================= */
+.calc { display: grid; grid-template-columns: 340px 1fr; gap: 28px; background: #fff; border-radius: 24px; box-shadow: var(--shadow); padding: 28px; }
+.calc-form label:first-child { margin-top: 0; }
+.calc-row { display: flex; gap: 8px; align-items: end; }
+.calc-row > div { flex: 1; }
+.swap {
+  width: 46px; height: 48px; flex: 0 0 46px; border-radius: 12px; border: 1px solid var(--line);
+  background: #fff; cursor: pointer; font-size: 18px; transition: transform .4s var(--ease), background .25s;
+}
+.swap:hover { background: #e0f2fe; transform: rotate(180deg); }
+.calc-map {
+  background: linear-gradient(160deg, #0b2347, #061630); border-radius: 20px; padding: 18px; color: #fff;
+  display: flex; flex-direction: column; position: relative; overflow: hidden;
+}
+.calc-map::before {
+  content: ""; position: absolute; inset: 0; opacity: .25;
+  background-image: radial-gradient(rgba(255,255,255,.5) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.calc-map svg { width: 100%; height: auto; position: relative; }
+.route-bg { fill: none; stroke: rgba(255,255,255,.18); stroke-width: 2; stroke-dasharray: 6 8; }
+.route-line { fill: none; stroke: var(--sky); stroke-width: 3; stroke-linecap: round; }
+.city-dot { fill: var(--sky); }
+.city-ring { fill: none; stroke: var(--sky); stroke-width: 2; animation: ring 1.8s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes ring { from { transform: scale(.6); opacity: 1; } to { transform: scale(2.2); opacity: 0; } }
+.city-label { fill: #fff; font-size: 15px; font-weight: 700; }
+.calc-results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; position: relative; margin-top: 6px; }
+.calc-results div { background: rgba(255,255,255,.07); border-radius: 14px; padding: 12px 14px; }
+.calc-results small { color: #9fb6d6; display: block; font-size: 12.5px; }
+.calc-results b { font-size: 22px; color: #fff; }
+
+/* ================= FLIP KARTALAR ================= */
+.flip-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.flip { perspective: 1000px; width: 100%; height: 220px; border: none; background: none; cursor: pointer; text-align: left; padding: 0; }
+.flip-inner { position: relative; width: 100%; height: 100%; transition: transform .75s var(--ease); transform-style: preserve-3d; }
+.flip.flipped .flip-inner { transform: rotateY(180deg); }
+.flip-face {
+  position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow);
+  display: flex; flex-direction: column; justify-content: center;
+}
+.flip-front { background: #fff; }
+.flip-front h3 { font-size: 22px; }
+.flip-front small { color: var(--blue); font-weight: 700; margin-top: 8px; }
+.flip-back { background: linear-gradient(135deg, var(--blue), var(--navy-2)); color: #fff; transform: rotateY(180deg); }
+.flip-back p { color: #e0efff; }
+.flip:hover .flip-front { box-shadow: 0 18px 40px rgba(6,22,48,.16); }
+
+/* ================= GALEREYA + LIGHTBOX ================= */
+.gallery { columns: 3; column-gap: 16px; }
+.gallery figure { break-inside: avoid; margin-bottom: 16px; position: relative; border-radius: 16px; overflow: hidden; cursor: zoom-in; }
+.gallery img { width: 100%; transition: transform .6s var(--ease); }
+.gallery figure:hover img { transform: scale(1.07); }
+.gallery figcaption {
+  position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 18px;
+  color: #fff; font-weight: 700; background: linear-gradient(to top, rgba(6,22,48,.85), transparent 60%);
+  opacity: 0; transition: opacity .35s;
+}
+.gallery figure:hover figcaption { opacity: 1; }
+
+/* ================= KARTA KARUSEL (TRACK) ================= */
+.track { display: flex; gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; padding: 6px 4px 22px; scrollbar-width: none; }
+.track::-webkit-scrollbar { display: none; }
+.track > * { flex: 0 0 calc((100% - 44px) / 3); scroll-snap-align: start; }
+.track-btns { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 14px; }
+.track-btns button { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line); background: #fff; cursor: pointer; font-size: 18px; transition: all .25s; }
+.track-btns button:hover { background: var(--navy); color: #fff; }
+.testimonial { background: #fff; border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow); position: relative; }
+.testimonial::before { content: "“"; position: absolute; top: 4px; right: 22px; font-size: 80px; color: #e0f2fe; font-family: Georgia, serif; }
+.testimonial p { color: var(--muted); margin-bottom: 18px; position: relative; }
+.person { display: flex; align-items: center; gap: 12px; }
+.avatar { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, var(--sky), var(--blue)); color: #fff; font-weight: 800; display: grid; place-items: center; }
+.person small { color: var(--muted); display: block; line-height: 1.2; }
+.stars { color: var(--amber); letter-spacing: 2px; }
+
+/* ================= UCHISH SIMULYATORI ================= */
+.sim { display: grid; grid-template-columns: 1.2fr 1fr; gap: 28px; align-items: stretch; }
+.sim-box {
+  position: relative; height: 340px; border-radius: 22px; overflow: hidden;
+  background: linear-gradient(#38bdf8 0%, #7dd3fc 60%, #bae6fd 100%);
+  box-shadow: var(--shadow);
+}
+.sim-clouds {
+  position: absolute; inset: 0 0 60px;
+  background-image:
+    radial-gradient(ellipse 60px 22px at 20% 25%, #fff 98%, transparent),
+    radial-gradient(ellipse 80px 26px at 65% 15%, #fff 98%, transparent),
+    radial-gradient(ellipse 50px 18px at 85% 45%, rgba(255,255,255,.85) 98%, transparent);
+  background-size: 600px 100%; background-repeat: repeat-x;
+}
+.sim-runway {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 60px; background: #334155;
+  background-image: linear-gradient(90deg, #fff 0 40px, transparent 40px 80px);
+  background-size: 80px 4px; background-repeat: repeat-x; background-position: 0 28px;
+}
+.sim-plane {
+  position: absolute; left: 50%; bottom: 64px; width: 170px; height: 66px;
+  transform: translate(-50%, var(--y, 0px)) rotate(var(--pitch, 0deg));
+  transition: transform .5s var(--ease);
+}
+.sim-plane svg { width: 100%; height: 100%; fill: #fff; filter: drop-shadow(0 4px 6px rgba(0,0,0,.25)); }
+.arrow { position: absolute; border-radius: 3px; transition: width .3s, height .3s, opacity .3s, box-shadow .3s; }
+.arrow::after { content: ""; position: absolute; border: 8px solid transparent; }
+.arrow i { position: absolute; font-style: normal; font-size: 12px; font-weight: 800; color: #fff; background: rgba(6,22,48,.75); padding: 1px 7px; border-radius: 8px; white-space: nowrap; }
+.arrow.lift { left: 50%; bottom: 50%; width: 4px; height: var(--lift, 10px); background: var(--green); margin-left: -2px; }
+.arrow.lift::after { left: -6px; top: -14px; border-bottom-color: var(--green); }
+.arrow.lift i { top: -12px; left: 12px; }
+.arrow.weight { left: 50%; top: 50%; width: 4px; height: 52px; background: var(--red); margin-left: -2px; }
+.arrow.weight::after { left: -6px; bottom: -14px; border-top-color: var(--red); }
+.arrow.weight i { bottom: 4px; left: 12px; }
+.arrow.thrust { left: 100%; top: 50%; height: 4px; width: var(--thrust, 10px); background: var(--amber); margin-top: -2px; }
+.arrow.thrust::after { right: -14px; top: -6px; border-left-color: var(--amber); }
+.arrow.thrust i { top: 10px; left: 0; }
+.arrow.drag { right: 100%; top: 50%; height: 4px; width: var(--drag, 4px); background: #a855f7; margin-top: -2px; }
+.arrow.drag::after { left: -14px; top: -6px; border-right-color: #a855f7; }
+.arrow.drag i { top: 10px; right: 0; }
+.arrow.focus { box-shadow: 0 0 0 4px rgba(255,255,255,.9); animation: blink .8s ease-in-out 3; }
+@keyframes blink { 50% { opacity: .35; } }
+.sim-status {
+  position: absolute; top: 14px; left: 14px; z-index: 2;
+  background: rgba(6,22,48,.8); color: #fff; padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 14px;
+  transition: background .3s;
+}
+.sim-status.up { background: var(--green); }
+.sim-panel { background: #fff; border-radius: 22px; padding: 26px; box-shadow: var(--shadow); }
+.sim-panel h3 { margin-bottom: 6px; }
+.range-row { display: flex; justify-content: space-between; font-weight: 700; margin: 16px 0 4px; }
+.range-row b { color: var(--blue); }
+input[type="range"] { padding: 0; height: 8px; border: none; border-radius: 8px; accent-color: var(--blue); background: #e0f2fe; cursor: pointer; }
+input[type="range"]:focus { box-shadow: none; }
+.meter { height: 10px; background: #eef5fd; border-radius: 10px; overflow: hidden; margin-top: 6px; }
+.meter span { display: block; height: 100%; width: 0; background: var(--green); border-radius: 10px; transition: width .3s, background .3s; }
+.force-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
+.force-chips button {
+  border: 1px solid var(--line); background: #f8fbff; border-radius: 12px; padding: 10px; cursor: pointer;
+  font-weight: 700; font-size: 14px; text-align: left; transition: all .25s;
+}
+.force-chips button span { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+.force-chips button.active { border-color: var(--blue); background: #e0f2fe; }
+.force-info { margin-top: 12px; color: var(--muted); font-size: 14.5px; min-height: 66px; }
+
+/* ================= SOLISHTIRISH ================= */
+.compare { background: #fff; border-radius: 24px; box-shadow: var(--shadow); padding: 28px; }
+.compare-pick { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: center; margin-bottom: 22px; }
+.vs { width: 48px; height: 48px; border-radius: 50%; background: var(--navy); color: #fff; font-weight: 800; display: grid; place-items: center; }
+.bar-row { margin: 16px 0; }
+.bar-row h4 { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+.bar { display: flex; align-items: center; gap: 10px; margin: 5px 0; }
+.bar .track-line { flex: 1; height: 14px; background: #eef5fd; border-radius: 10px; overflow: hidden; }
+.bar .fill { height: 100%; width: 0; border-radius: 10px; transition: width .8s var(--ease); }
+.bar .fill.a { background: linear-gradient(90deg, var(--sky), var(--blue)); }
+.bar .fill.b { background: linear-gradient(90deg, #fbbf24, var(--amber)); }
+.bar b { min-width: 110px; text-align: right; font-size: 14px; }
+.legend { display: flex; gap: 18px; font-size: 14px; font-weight: 700; }
+.legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 6px; vertical-align: -1px; background: var(--blue); }
+.legend span.b::before { background: var(--amber); }
+
+/* ================= TABS ================= */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; justify-content: center; }
+.tabs button { border: none; background: #fff; padding: 11px 18px; border-radius: 12px; cursor: pointer; font-weight: 700; box-shadow: var(--shadow); transition: all .25s; }
+.tabs button:hover { transform: translateY(-2px); }
+.tabs button.active { background: var(--blue); color: #fff; }
+.tab-panel { display: none; }
+.tab-panel.active { display: grid; }
+.tab-panel.active .card { animation: cardIn .5s var(--ease) backwards; }
+.tab-panel.active .card:nth-child(2) { animation-delay: .08s; }
+.tab-panel.active .card:nth-child(3) { animation-delay: .16s; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(24px) scale(.97); } to { opacity: 1; transform: none; } }
+
+/* ================= INTERAKTIV TIMELINE ================= */
+.tl { background: linear-gradient(135deg, var(--navy), var(--navy-2)); color: #fff; border-radius: 24px; padding: 34px; margin: 50px 0; }
+.tl-rail { position: relative; display: flex; justify-content: space-between; margin: 28px 0 30px; overflow-x: auto; padding: 10px 4px; scrollbar-width: none; gap: 6px; }
+.tl-rail::-webkit-scrollbar { display: none; }
+.tl-rail::before { content: ""; position: absolute; left: 20px; right: 20px; top: 27px; height: 2px; background: rgba(255,255,255,.15); }
+.tl-fill { position: absolute; left: 20px; top: 27px; height: 2px; width: 0; background: var(--sky); transition: width .6s var(--ease); }
+.tl-rail button { position: relative; z-index: 1; background: none; border: none; color: #9fb6d6; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; min-width: 64px; transition: color .3s; }
+.tl-rail button::before { content: ""; width: 16px; height: 16px; border-radius: 50%; background: var(--navy); border: 3px solid rgba(255,255,255,.35); transition: all .3s; }
+.tl-rail button.done::before { border-color: var(--sky); }
+.tl-rail button.active { color: #fff; }
+.tl-rail button.active::before { background: var(--sky); border-color: var(--sky); box-shadow: 0 0 0 7px rgba(56,189,248,.25); transform: scale(1.15); }
+.tl-card { display: grid; grid-template-columns: 120px 1fr; gap: 24px; align-items: center; background: rgba(255,255,255,.06); border-radius: 20px; padding: 26px; }
+.tl-card.anim { animation: tlIn .5s var(--ease); }
+@keyframes tlIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: none; } }
+.tl-icon { width: 120px; height: 120px; border-radius: 26px; background: rgba(56,189,248,.15); display: grid; place-items: center; font-size: 56px; }
+.tl-card .year { color: var(--sky); font-weight: 800; font-size: 34px; line-height: 1; }
+.tl-card h3 { font-size: 22px; margin: 6px 0; }
+.tl-card p { color: #cfe0f5; }
+.tl-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
+.tl-nav span { color: #9fb6d6; font-size: 14px; }
+
+/* ================= QISMLAR ================= */
+.parts { display: grid; grid-template-columns: 300px 1fr; gap: 24px; }
+.parts-list { display: grid; gap: 8px; align-content: start; }
+.parts-list button {
+  display: flex; align-items: center; gap: 12px; text-align: left;
+  border: 1px solid transparent; background: #fff; border-radius: 14px; padding: 12px 16px;
+  cursor: pointer; font-weight: 700; box-shadow: var(--shadow); transition: all .3s var(--ease);
+}
+.parts-list button span { font-size: 22px; }
+.parts-list button:hover { transform: translateX(6px); }
+.parts-list button.active { border-color: var(--sky); background: #e0f2fe; transform: translateX(10px); }
+.part-view { background: #fff; border-radius: 22px; box-shadow: var(--shadow); padding: 34px; display: flex; flex-direction: column; justify-content: center; }
+.part-view.anim { animation: cardIn .45s var(--ease); }
+.part-view .big { font-size: 64px; line-height: 1; }
+.part-view h3 { font-size: 26px; margin: 14px 0 8px; }
+.part-view p { color: var(--muted); }
+.part-view .specs { margin-top: 16px; }
+
+/* ================= VIKTORINA ================= */
+.quiz { max-width: 760px; margin: 0 auto; background: #fff; border-radius: 24px; box-shadow: var(--shadow); padding: 32px; }
+.quiz-top { display: flex; justify-content: space-between; font-weight: 700; color: var(--muted); font-size: 14px; }
+.quiz-bar { height: 8px; background: #eef5fd; border-radius: 8px; overflow: hidden; margin: 10px 0 22px; }
+.quiz-bar span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--sky), var(--blue)); transition: width .5s var(--ease); }
+.quiz h3 { font-size: 22px; margin-bottom: 18px; }
+.quiz-body.anim { animation: cardIn .45s var(--ease); }
+.options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.options button {
+  border: 2px solid var(--line); background: #f8fbff; border-radius: 14px; padding: 14px 16px;
+  text-align: left; cursor: pointer; font-weight: 600; transition: all .25s;
+}
+.options button:hover:not(:disabled) { border-color: var(--sky); transform: translateY(-2px); }
+.options button:disabled { cursor: default; }
+.options button.right { border-color: var(--green); background: #dcfce7; }
+.options button.wrong { border-color: var(--red); background: #fee2e2; animation: shake .4s; }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.quiz-note { margin-top: 16px; padding: 14px 16px; border-radius: 12px; background: #eef5fd; color: var(--navy-2); display: none; }
+.quiz-note.show { display: block; animation: cardIn .4s var(--ease); }
+.quiz-result { text-align: center; }
+.quiz-result .big { font-size: 64px; }
+.quiz-result .score { font-size: 42px; font-weight: 800; color: var(--blue); }
+
+/* ================= ACCORDION ================= */
+.accordion { max-width: 860px; margin: 0 auto; display: grid; gap: 12px; }
+.acc-item { background: #fff; border-radius: 16px; box-shadow: var(--shadow); border: 1px solid transparent; overflow: hidden; transition: border-color .3s; }
+.acc-item.open { border-color: var(--sky); }
+.acc-item.hidden { display: none; }
+.acc-head { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 22px; background: none; border: none; cursor: pointer; text-align: left; font-size: 17px; font-weight: 700; color: var(--text); }
+.acc-icon { flex: 0 0 32px; height: 32px; border-radius: 50%; background: #e0f2fe; color: var(--blue); display: grid; place-items: center; font-size: 20px; transition: transform .4s var(--ease), background .3s, color .3s; }
+.acc-item.open .acc-icon { transform: rotate(45deg); background: var(--blue); color: #fff; }
+.acc-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s var(--ease); }
+.acc-item.open .acc-body { grid-template-rows: 1fr; }
+.acc-body > div { overflow: hidden; }
+.acc-body p { padding: 0 22px 22px; color: var(--muted); }
+.faq-search { max-width: 860px; margin: 0 auto 18px; }
+
+/* ================= MODAL ================= */
+.modal {
+  position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 20px;
+  background: rgba(3, 12, 28, .85); backdrop-filter: blur(6px);
+  opacity: 0; visibility: hidden; transition: opacity .35s, visibility .35s;
+}
+.modal.show { opacity: 1; visibility: visible; }
+.modal-box {
+  background: #fff; border-radius: 22px; width: min(760px, 100%); max-height: 90vh; overflow-y: auto;
+  transform: scale(.92) translateY(20px); transition: transform .4s var(--ease); position: relative;
+}
+.modal.show .modal-box { transform: none; }
+.modal-box img { width: 100%; height: 320px; object-fit: cover; }
+.modal-body { padding: 26px 28px 30px; }
+.modal-body h2 { margin-bottom: 8px; }
+.modal-body p { color: var(--muted); }
+.modal-close { position: absolute; top: 14px; right: 14px; z-index: 2; width: 42px; height: 42px; border-radius: 50%; border: none; background: rgba(6,22,48,.7); color: #fff; font-size: 22px; cursor: pointer; }
+.spec-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 15px; }
+.spec-table td { padding: 9px 0; border-bottom: 1px solid var(--line); }
+.spec-table td:last-child { text-align: right; font-weight: 700; }
+.lightbox img { max-width: 92vw; max-height: 82vh; border-radius: 14px; transform: scale(.9); transition: transform .4s var(--ease); }
+.lightbox.show img { transform: none; }
+.lightbox p { color: #fff; text-align: center; margin-top: 12px; }
+.lb-nav { position: fixed; top: 50%; transform: translateY(-50%); width: 52px; height: 52px; border-radius: 50%; border: none; background: rgba(255,255,255,.15); color: #fff; font-size: 24px; cursor: pointer; }
+.lb-nav.prev { left: 16px; } .lb-nav.next { right: 16px; }
+
+/* ================= ALOQA ================= */
+form { background: #fff; padding: 32px; border-radius: var(--radius); box-shadow: var(--shadow); }
+form h2 { margin-bottom: 18px; }
+textarea { min-height: 130px; resize: vertical; }
+form .btn { margin-top: 18px; }
+.field { position: relative; }
+.field .hint { font-size: 12.5px; color: var(--red); min-height: 18px; margin-top: 4px; opacity: 0; transition: opacity .25s; }
+.field.invalid input, .field.invalid textarea, .field.invalid select { border-color: var(--red); }
+.field.invalid .hint { opacity: 1; }
+.field.valid input, .field.valid textarea, .field.valid select { border-color: var(--green); }
+.counter { position: absolute; right: 0; top: 14px; font-size: 12.5px; color: var(--muted); }
+.feature { background: rgba(255,255,255,.06); padding: 14px 18px; border-radius: 14px; margin-top: 12px; transition: background .3s, transform .3s; }
+.feature:hover { background: rgba(255,255,255,.12); transform: translateX(6px); }
+/* Yuborilganda uchib ketadigan qog'oz samolyot */
+.paper-plane { position: fixed; z-index: 95; font-size: 34px; pointer-events: none; animation: paper 1.4s ease-in forwards; }
+@keyframes paper {
+  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  100% { transform: translate(60vw, -80vh) rotate(-25deg); opacity: 0; }
+}
+
+.toast {
+  position: fixed; bottom: 24px; left: 50%; z-index: 90; transform: translate(-50%, 200%); visibility: hidden;
+  background: var(--navy); color: #fff; padding: 14px 22px; border-radius: 14px; box-shadow: 0 14px 30px rgba(0,0,0,.3);
+  transition: transform .5s var(--ease), visibility .5s; max-width: 92vw;
+}
+.toast.show { transform: translate(-50%, 0); visibility: visible; }
+
+/* ================= FOOTER ================= */
+footer { background: var(--navy); color: #a9bcd8; padding: 55px 7% 26px; margin-top: 40px; }
+.footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 30px; }
+footer h4 { color: #fff; margin-bottom: 12px; }
+footer button { display: block; background: none; border: none; color: #a9bcd8; cursor: pointer; padding: 4px 0; transition: color .2s, transform .2s; }
+footer button:hover { color: var(--sky); transform: translateX(4px); }
+.copy { border-top: 1px solid rgba(255,255,255,.1); margin-top: 34px; padding-top: 20px; font-size: 14px; text-align: center; }
+
+.to-top {
+  position: fixed; right: 22px; bottom: 22px; z-index: 40; width: 50px; height: 50px; border-radius: 50%; border: none;
+  background: var(--blue); color: #fff; font-size: 20px; cursor: pointer; box-shadow: 0 10px 24px rgba(2,132,199,.4);
+  opacity: 0; transform: translateY(20px); pointer-events: none; transition: opacity .3s, transform .3s;
+}
+.to-top.show { opacity: 1; transform: none; pointer-events: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ================= MOSLASHUVCHAN (RESPONSIVE) ================= */
+@media (max-width: 1080px) {
+  nav.desktop { display: none; }
+  .burger { display: flex; }
+  .cards, .flip-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .track > * { flex-basis: calc((100% - 22px) / 2); }
+  .calc, .sim { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .page { padding: 26px 16px; }
+  header, header.scrolled { padding: 12px 16px; }
+  .hero-slider { height: 520px; border-radius: 20px; }
+  .slide { padding: 30px 24px 70px; }
+  .slider-arrow { display: none; }
+  .dots { left: 24px; }
+  .stats { margin: 18px 0 0; gap: 12px; }
+  .stat { padding: 18px 10px; }
+  .stat strong { font-size: 28px; }
+  .cards, .flip-grid, .two-columns, .footer-grid, .parts, .options { grid-template-columns: 1fr; }
+  .track > * { flex-basis: 86%; }
+  .gallery { columns: 2; column-gap: 10px; }
+  .gallery figure { margin-bottom: 10px; }
+  .page-hero { padding: 46px 24px; }
+  .info-box, form, .calc, .compare, .quiz, .tl, .sim-panel { padding: 22px 18px; }
+  .calc-results { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .calc-results b { font-size: 17px; }
+  .compare-pick { grid-template-columns: 1fr; }
+  .vs { margin: 0 auto; }
+  .bar b { min-width: 86px; font-size: 13px; }
+  .tl-card { grid-template-columns: 1fr; text-align: center; }
+  .tl-icon { margin: 0 auto; width: 90px; height: 90px; font-size: 44px; }
+  .parts-list { grid-template-columns: 1fr 1fr; }
+  .parts-list button:hover, .parts-list button.active { transform: none; }
+  .modal-box img { height: 220px; }
+  .sim-box { height: 300px; }
+}
+</style>
+</head>
+
+<body class="lock">
+
+<div class="scroll-bar" id="scrollBar"></div>
+<div class="loader" id="loader"><div class="loader-plane">✈</div></div>
+
+<!-- ================= HEADER ================= -->
+<header id="header">
+  <div class="logo" data-go="home">✈ Sky<span>World</span></div>
+  <nav class="desktop" id="deskNav">
+    <span class="nav-pill" id="navPill"></span>
+    <button class="active" data-page="home">Bosh sahifa</button>
+    <button data-page="planes">Samolyotlar</button>
+    <button data-page="history">Tarix</button>
+    <button data-page="contact">Aloqa</button>
+  </nav>
+  <button class="burger" id="burger" aria-label="Menyuni ochish" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<div class="overlay" id="overlay"></div>
+<aside class="mobile-nav" id="mobileNav" aria-label="Mobil menyu">
+  <div class="mobile-nav-head">
+    <div class="logo">✈ Sky<span>World</span></div>
+    <button class="close-btn" id="closeNav" aria-label="Yopish">×</button>
+  </div>
+  <button class="link active" data-page="home">🏠 Bosh sahifa</button>
+  <button class="link" data-page="planes">✈ Samolyotlar</button>
+  <button class="link" data-page="history">📜 Tarix</button>
+  <button class="link" data-page="contact">✉ Aloqa</button>
+  <div class="mobile-foot">© 2026 SkyWorld — o'quv loyihasi</div>
+</aside>
+
+<main>
+
+<!-- =====================================================
+     1. BOSH SAHIFA
+     ===================================================== -->
+<section id="home" class="page active">
+
+  <div class="hero-slider" id="heroSlider">
+    <div class="flying">✈</div>
+
+    <div class="slide active">
+      <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1800&q=80')"></div>
+      <div class="slide-content">
+        <p class="tag">✈ AVIATSIYA OLAMIGA XUSH KELIBSIZ</p>
+        <h1>Osmon — chegarasiz imkoniyatlar olami</h1>
+        <p>Samolyotlar, zamonaviy texnologiyalar va aviatsiya tarixini interaktiv tarzda kashf eting.</p>
+        <div>
+          <button class="btn" data-go="planes">Samolyotlarni ko'rish →</button>
+          <button class="btn ghost" data-go="history">Tarixni o'rganish</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1517479149777-5f3b1511d5ad?auto=format&fit=crop&w=1800&q=80')"></div>
+      <div class="slide-content">
+        <p class="tag">🛫 SIMULYATOR</p>
+        <h1>Samolyotni o'zingiz havoga ko'taring</h1>
+        <p>Tezlikni oshiring va ko'taruvchi kuch og'irlikdan oshgan lahzani o'z ko'zingiz bilan ko'ring.</p>
+        <div><button class="btn" data-go="planes" data-target="simSection">Simulyatorni ochish →</button></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&w=1800&q=80')"></div>
+      <div class="slide-content">
+        <p class="tag">🧭 KALKULYATOR</p>
+        <h1>Toshkentdan Tokiogacha necha soat?</h1>
+        <p>Ikki shaharni tanlang — masofa va parvoz vaqtini darhol hisoblab beramiz.</p>
+        <div><button class="btn" data-go="home" data-target="calcSection">Hisoblash →</button></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="slide-bg" style="background-image:url('https://images.unsplash.com/photo-1488085061387-422e29b40080?auto=format&fit=crop&w=1800&q=80')"></div>
+      <div class="slide-content">
+        <p class="tag">🧠 VIKTORINA</p>
+        <h1>Aviatsiyani qanchalik bilasiz?</h1>
+        <p>6 ta savoldan iborat qisqa viktorinada bilimingizni sinab ko'ring.</p>
+        <div><button class="btn" data-go="history" data-target="quizSection">Viktorinani boshlash →</button></div>
+      </div>
+    </div>
+
+    <button class="slider-arrow prev" aria-label="Oldingi">‹</button>
+    <button class="slider-arrow next" aria-label="Keyingi">›</button>
+    <div class="dots"></div>
+    <div class="progress"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat" data-aos="fade-up"><strong data-count="1903" data-plain>0</strong><p>Birinchi dvigatelli parvoz yili</p></div>
+    <div class="stat" data-aos="fade-up" data-aos-delay="100"><strong data-count="25000" data-suffix="+">0</strong><p>Dunyodagi tijoriy samolyotlar</p></div>
+    <div class="stat" data-aos="fade-up" data-aos-delay="200"><strong data-count="4" data-suffix=" mlrd">0</strong><p>Yillik yo'lovchilar soni</p></div>
+    <div class="stat" data-aos="fade-up" data-aos-delay="300"><strong data-count="40000" data-suffix="+">0</strong><p>Dunyodagi aeroportlar</p></div>
+  </div>
+
+  <div class="section-title" data-aos="fade-up">
+    <small>NEGA SKYWORLD?</small>
+    <h2>Aviatsiya haqida hamma narsa bir joyda</h2>
+    <p>O'qing, sinab ko'ring va o'ynab o'rganing.</p>
+  </div>
+
+  <div class="cards">
+    <div data-aos="fade-up">
+      <article class="card tilt">
+        <div class="card-img">
+          <img src="https://images.unsplash.com/photo-1474302770737-173ee21bab63?auto=format&fit=crop&w=800&q=80" alt="Samolyot" loading="lazy">
+          <div class="img-overlay"><span>Ko'rish →</span></div>
+        </div>
+        <div class="card-content">
+          <h3>Samolyotlar va texnologiya</h3>
+          <p>9 xil samolyot, solishtirish vositasi va uchish simulyatori.</p>
+          <button class="btn" data-go="planes">Batafsil</button>
+        </div>
+      </article>
+    </div>
+    <div data-aos="fade-up" data-aos-delay="120">
+      <article class="card tilt">
+        <div class="card-img">
+          <img src="https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?auto=format&fit=crop&w=800&q=80" alt="Kichik samolyot" loading="lazy">
+          <div class="img-overlay"><span>Ko'rish →</span></div>
+        </div>
+        <div class="card-content">
+          <h3>Tarix va viktorina</h3>
+          <p>Interaktiv vaqt chizig'i, samolyot qismlari va bilim sinovi.</p>
+          <button class="btn" data-go="history">Batafsil</button>
+        </div>
+      </article>
+    </div>
+    <div data-aos="fade-up" data-aos-delay="240">
+      <article class="card tilt">
+        <div class="card-img">
+          <img src="https://images.unsplash.com/photo-1530521954074-e64f6810b32d?auto=format&fit=crop&w=800&q=80" alt="Aeroportda yo'lovchi" loading="lazy">
+          <div class="img-overlay"><span>Ko'rish →</span></div>
+        </div>
+        <div class="card-content">
+          <h3>Savol-javob va aloqa</h3>
+          <p>Ko'p beriladigan savollar va biz bilan bog'lanish.</p>
+          <button class="btn" data-go="contact">Batafsil</button>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <!-- Parvoz kalkulyatori -->
+  <div class="section-title" id="calcSection" data-aos="fade-up">
+    <small>INTERAKTIV</small>
+    <h2>Parvoz kalkulyatori</h2>
+    <p>Shaharlarni va samolyotni tanlang — masofa va vaqt darhol hisoblanadi.</p>
+  </div>
+
+  <div class="calc" data-aos="zoom-in-up">
+    <div class="calc-form">
+      <div class="calc-row">
+        <div>
+          <label for="fromCity">Qayerdan</label>
+          <select id="fromCity"></select>
+        </div>
+        <button class="swap" id="swapCity" aria-label="Shaharlarni almashtirish" title="Almashtirish">⇄</button>
+        <div>
+          <label for="toCity">Qayerga</label>
+          <select id="toCity"></select>
+        </div>
+      </div>
+      <label for="calcPlane">Samolyot</label>
+      <select id="calcPlane">
+        <option value="900">Boeing 787 (~900 km/soat)</option>
+        <option value="830">Airbus A320 (~830 km/soat)</option>
+        <option value="2180">Konkord (~2180 km/soat)</option>
+        <option value="226">Cessna 172 (~226 km/soat)</option>
+      </select>
+      <button class="btn" id="calcBtn" style="margin-top:18px;width:100%;justify-content:center">✈ Parvozni boshlash</button>
+    </div>
+    <div class="calc-map">
+      <svg viewBox="0 0 600 220" aria-hidden="true">
+        <path class="route-bg" id="routeBg" d="M70 170 Q300 -10 530 170"/>
+        <path class="route-line" id="routeLine" d="M70 170 Q300 -10 530 170"/>
+        <circle class="city-ring" cx="70" cy="170" r="9"/>
+        <circle class="city-ring" cx="530" cy="170" r="9"/>
+        <circle class="city-dot" cx="70" cy="170" r="7"/>
+        <circle class="city-dot" cx="530" cy="170" r="7"/>
+        <text class="city-label" id="fromLabel" x="70" y="204" text-anchor="middle"></text>
+        <text class="city-label" id="toLabel" x="530" y="204" text-anchor="middle"></text>
+        <g id="calcPlaneIcon" fill="#fff">
+          <path d="M-14 -2.5 L6 -2.5 Q13 -2 15 0 Q13 2 6 2.5 L-14 2.5 Z"/>
+          <path d="M-3 -2.5 L-8 -15 L-3 -15 L6 -2.5 Z"/>
+          <path d="M-3 2.5 L-8 15 L-3 15 L6 2.5 Z"/>
+          <path d="M-14 -2.5 L-17 -8 L-13 -8 L-9 -2.5 Z"/>
+          <path d="M-14 2.5 L-17 8 L-13 8 L-9 2.5 Z"/>
+        </g>
+      </svg>
+      <div class="calc-results">
+        <div><small>Masofa</small><b id="rDist">—</b></div>
+        <div><small>Parvoz vaqti</small><b id="rTime">—</b></div>
+        <div><small>CO₂ / yo'lovchi</small><b id="rCo2">—</b></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flip faktlar -->
+  <div class="section-title" data-aos="fade-up">
+    <small>QIZIQARLI FAKTLAR</small>
+    <h2>Bilasizmi?</h2>
+    <p>Kartani bosing — u aylanib, javobni ko'rsatadi.</p>
+  </div>
+  <div class="flip-grid" id="factGrid"></div>
+
+  <!-- Galereya -->
+  <div class="section-title" id="homeGallery" data-aos="fade-up">
+    <small>GALEREYA</small>
+    <h2>Osmondan ko'rinadigan go'zallik</h2>
+    <p>Rasmni bosing — katta hajmda ochiladi. Klaviatura strelkalari bilan almashtiring.</p>
+  </div>
+  <div class="gallery" id="galleryGrid"></div>
+
+  <!-- Fikrlar -->
+  <div class="section-title" data-aos="fade-up">
+    <small>FIKRLAR</small>
+    <h2>Foydalanuvchilar nima deydi?</h2>
+  </div>
+  <div data-aos="fade-up">
+    <div class="track-btns">
+      <button data-track="reviews" data-dir="-1" aria-label="Orqaga">←</button>
+      <button data-track="reviews" data-dir="1" aria-label="Oldinga">→</button>
+    </div>
+    <div class="track" id="reviews">
+      <div class="testimonial"><div class="stars">★★★★★</div><p>Samolyot qanday uchishini simulyatorda tezlikni oshirib ko'rib tushundim. Zo'r!</p><div class="person"><div class="avatar">A</div><div><b>Aziza</b><small>9-sinf o'quvchisi</small></div></div></div>
+      <div class="testimonial"><div class="stars">★★★★★</div><p>Tarix bo'limidagi vaqt chizig'i darsda taqdimot uchun juda foydali bo'ldi.</p><div class="person"><div class="avatar">B</div><div><b>Bekzod</b><small>Talaba</small></div></div></div>
+      <div class="testimonial"><div class="stars">★★★★☆</div><p>Viktorinada 5/6 oldim. Galereyadagi suratlar ham zo'r!</p><div class="person"><div class="avatar">D</div><div><b>Dilshod</b><small>Aviatsiya ishqibozi</small></div></div></div>
+      <div class="testimonial"><div class="stars">★★★★★</div><p>Kalkulyator bilan keyingi safarimiz qancha davom etishini bildik.</p><div class="person"><div class="avatar">M</div><div><b>Malika</b><small>Sayohatchi</small></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================
+     2. SAMOLYOTLAR (+ texnologiya)
+     ===================================================== -->
+<section id="planes" class="page">
+  <div class="page-hero" style="background-image:url('https://images.unsplash.com/photo-1529074963764-98f45c47344b?auto=format&fit=crop&w=1600&q=80')">
+    <small>SAMOLYOTLAR</small>
+    <h1>Samolyotlar olami</h1>
+    <p>Qidiring, filtrlang, sevimlilarga qo'shing va solishtiring. Kartani bosing — batafsil ma'lumot ochiladi.</p>
+  </div>
+
+  <div class="toolbar" data-aos="fade-up">
+    <div class="search"><input id="planeSearch" type="search" placeholder="Samolyot qidirish..." aria-label="Samolyot qidirish"></div>
+    <div class="filters" id="planeFilters">
+      <button class="active" data-filter="all">Barchasi</button>
+      <button data-filter="passenger">Yo'lovchi</button>
+      <button data-filter="cargo">Yuk</button>
+      <button data-filter="small">Kichik</button>
+      <button data-filter="special">Maxsus</button>
+      <button data-filter="fav">❤ Sevimlilar</button>
+    </div>
+  </div>
+
+  <div class="cards" id="planeCards"></div>
+
+  <!-- Uchish simulyatori -->
+  <div class="section-title" id="simSection" data-aos="fade-up">
+    <small>SIMULYATOR</small>
+    <h2>Samolyot qanday uchadi?</h2>
+    <p>Tezlikni oshiring: ko'taruvchi kuch og'irlikdan oshganda samolyot havoga ko'tariladi.</p>
+  </div>
+
+  <div class="sim">
+    <div class="sim-box" id="simBox" data-aos="fade-right">
+      <div class="sim-status" id="simStatus">Yerda turibdi</div>
+      <div class="sim-clouds" id="simClouds"></div>
+      <div class="sim-runway" id="simRunway"></div>
+      <div class="sim-plane" id="simPlane">
+        <svg viewBox="0 0 92 36" aria-hidden="true">
+          <path d="M5 22 Q5 16 14 16 L70 16 Q82 16 89 21 Q82 26 70 26 L14 26 Q5 26 5 22Z"/>
+          <path d="M8 16 L3 3 L13 3 L23 16Z"/>
+          <path d="M36 22 L27 33 L38 33 L54 22Z" fill="#cbd5e1"/>
+          <circle cx="78" cy="20" r="1.6" fill="#0284c7"/><circle cx="72" cy="20" r="1.6" fill="#0284c7"/>
+        </svg>
+        <div class="arrow lift" data-force="lift"><i>Ko'taruvchi</i></div>
+        <div class="arrow weight" data-force="weight"><i>Og'irlik</i></div>
+        <div class="arrow thrust" data-force="thrust"><i>Tortish</i></div>
+        <div class="arrow drag" data-force="drag"><i>Qarshilik</i></div>
+      </div>
+    </div>
+
+    <div class="sim-panel" data-aos="fade-left">
+      <h3>Boshqaruv paneli</h3>
+      <p style="color:var(--muted);font-size:14.5px">Airbus A320 taxminan <b>260 km/soat</b> tezlikda havoga ko'tariladi.</p>
+      <div class="range-row"><span>Tezlik</span><b id="simSpeedVal">0 km/soat</b></div>
+      <input type="range" id="simSpeed" min="0" max="350" value="0" step="5" aria-label="Tezlik">
+      <div class="range-row"><span>Ko'taruvchi kuch / og'irlik</span><b id="simLiftVal">0%</b></div>
+      <div class="meter"><span id="simMeter"></span></div>
+      <div class="force-chips" id="forceChips">
+        <button data-force="lift"><span style="background:var(--green)"></span>Ko'taruvchi</button>
+        <button data-force="weight"><span style="background:var(--red)"></span>Og'irlik</button>
+        <button data-force="thrust"><span style="background:var(--amber)"></span>Tortish</button>
+        <button data-force="drag"><span style="background:#a855f7"></span>Qarshilik</button>
+      </div>
+      <p class="force-info" id="forceInfo">Kuchlardan birini bosing — u simulyatorda yonib-o'chadi va izohi shu yerda chiqadi.</p>
+    </div>
+  </div>
+
+  <!-- Solishtirish -->
+  <div class="section-title" data-aos="fade-up">
+    <small>SOLISHTIRISH</small>
+    <h2>Ikki samolyotni yonma-yon qo'ying</h2>
+  </div>
+  <div class="compare" data-aos="fade-up">
+    <div class="compare-pick">
+      <select id="cmpA" aria-label="Birinchi samolyot"></select>
+      <div class="vs">VS</div>
+      <select id="cmpB" aria-label="Ikkinchi samolyot"></select>
+    </div>
+    <div class="legend"><span id="cmpALabel"></span><span class="b" id="cmpBLabel"></span></div>
+    <div id="cmpBars"></div>
+  </div>
+
+  <!-- Texnologiya tablari -->
+  <div class="section-title" data-aos="fade-up">
+    <small>TEXNOLOGIYA</small>
+    <h2>Zamonaviy aviatsiya texnologiyalari</h2>
+    <p>Dvigatellardan kelajak samolyotlarigacha.</p>
+  </div>
+
+  <div class="tabs" id="techTabs" data-aos="fade-up">
+    <button class="active" data-tab="engines">🔥 Dvigatellar</button>
+    <button data-tab="avionics">🎛 Avionika</button>
+    <button data-tab="materials">🧪 Materiallar</button>
+    <button data-tab="future">🚀 Kelajak</button>
+  </div>
+
+  <div data-aos="fade-up">
+    <div class="tab-panel cards active" data-panel="engines">
+      <div class="card"><div class="card-content"><div class="card-icon">🌀</div><h3>Turboventilyator</h3><p>Zamonaviy laynerlarning asosiy dvigateli. Katta ventilyator havoning katta qismini aylanib o'tkazib, tejamkorlikni oshiradi.</p></div></div>
+      <div class="card"><div class="card-content"><div class="card-icon">⚙</div><h3>Turbovintli</h3><p>Turbina vintni aylantiradi. Qisqa masofali va mintaqaviy parvozlarda juda tejamkor.</p></div></div>
+      <div class="card"><div class="card-content"><div class="card-icon">💨</div><h3>Porshenli</h3><p>Avtomobil dvigateliga o'xshash. Kichik o'quv va shaxsiy samolyotlarda ishlatiladi.</p></div></div>
+    </div>
+    <div class="tab-panel cards" data-panel="avionics">
+      <div class="card"><div class="card-content"><div class="card-icon">🤖</div><h3>Avtopilot</h3><p>Parvozning katta qismini avtomatik boshqaradi, uchuvchi esa nazorat qiladi.</p></div></div>
+      <div class="card"><div class="card-content"><div class="card-icon">🛰</div><h3>GPS navigatsiya</h3><p>Sun'iy yo'ldoshlar orqali samolyot o'rnini metr aniqligida belgilaydi.</p></div></div>
+      <div class="card"><div class="card-content"><div class="card-icon">📡</div><h3>Radar va TCAS</h3><p>Ob-havo va boshqa samolyotlarni kuzatib, to'qnashuvning oldini oladi.</p></div></div>
+    </div>
+    <div class="tab-panel cards" data-panel="materials">
+      <div class="card"><div class="card-content"><div class="card-icon">🧵</div><h3>Kompozitlar</h3><p>Uglerod tolasi Boeing 787 korpusining 50% ini tashkil etadi — yengil va mustahkam.</p></div></div>
+      <div class="card"><div class="card-content"><div class="card-icon">🔩</div><h3>Alyuminiy qotishmalari</h3><p>Uzoq yillar davomida aviatsiyaning asosiy materiali bo'lib kelgan.</p></div></div>
+      <div class="card"><div class="card-content"><div class="card-icon">🛡</div><h3>Titan</h3><p>Yuqori haroratga chidamli, dvigatel va shassi qismlarida ishlatiladi.</p></div></div>
+    </div>
+    <div class="tab-panel cards" data-panel="future">
+      <div class="card"><div class="card-content"><div class="card-icon">🔋</div><h3>Elektr samolyotlar</h3><p>Qisqa masofalar uchun shovqinsiz va chiqindisiz parvozlar sinovdan o'tmoqda.</p></div></div>
+      <div class="card"><div class="card-content"><div class="card-icon">💧</div><h3>Vodorod yoqilg'isi</h3><p>Kelajakda karbonat angidrid chiqarmaydigan uzoq masofali parvozlar uchun istiqbolli.</p></div></div>
+      <div class="card"><div class="card-content"><div class="card-icon">🚁</div><h3>Havo taksilari</h3><p>Shahar ichida vertikal uchib-qo'nadigan elektr apparatlar (eVTOL).</p></div></div>
+    </div>
+  </div>
+
+  <div class="two-columns" style="margin-top:60px">
+    <img data-aos="fade-right" src="https://images.unsplash.com/photo-1570710891163-6d3b5c47248b?auto=format&fit=crop&w=1000&q=80" alt="Bulutlar orasida samolyot" loading="lazy">
+    <div data-aos="fade-left">
+      <h2>Xavfsizlik — birinchi o'rinda</h2>
+      <p>Har bir samolyot har parvozdan oldin tekshiriladi va muntazam ravishda chuqur texnik ko'rikdan o'tkaziladi.</p>
+      <ul class="check-list">
+        <li>Barcha muhim tizimlar ikki yoki uch nusxada</li>
+        <li>Bitta dvigatel bilan ham xavfsiz qo'nish mumkin</li>
+        <li>"Qora quti" parvoz ma'lumotlarini saqlaydi</li>
+        <li>Uchuvchilar har yili simulyatorda sinovdan o'tadi</li>
+      </ul>
+      <button class="btn" data-go="history">Aviatsiya tarixiga o'tish →</button>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================
+     3. TARIX (+ qismlar, viktorina)
+     ===================================================== -->
+<section id="history" class="page">
+  <div class="page-hero" style="background-image:url('https://images.unsplash.com/photo-1474302770737-173ee21bab63?auto=format&fit=crop&w=1600&q=80')">
+    <small>TARIX</small>
+    <h1>Aviatsiya tarixi</h1>
+    <p>Orzudan zamonaviy parvozlarga qadar bo'lgan buyuk yo'l.</p>
+  </div>
+
+  <div class="two-columns">
+    <div data-aos="fade-right">
+      <h2>Insoniyatning buyuk orzusi</h2>
+      <p>Insonlar qadim zamonlardan beri qushlar kabi uchishni orzu qilgan. Leonardo da Vinchi XV asrdayoq uchuvchi mashina chizmalarini yaratgan.</p>
+      <p>Ilm-fan va muhandislik natijasida bugungi samolyotlar paydo bo'ldi. Bir asrdan kamroq vaqt ichida insoniyat 12 soniyalik parvozdan Oyga uchishgacha bordi.</p>
+    </div>
+    <img data-aos="fade-left" src="https://images.unsplash.com/photo-1556388158-158ea5ccacbd?auto=format&fit=crop&w=1000&q=80" alt="Qo'nayotgan samolyot" loading="lazy">
+  </div>
+
+  <!-- Interaktiv timeline -->
+  <div class="tl" data-aos="fade-up">
+    <h2>Muhim tarixiy bosqichlar</h2>
+    <p style="color:#9fb6d6">Yilni bosing yoki ← → tugmalaridan foydalaning.</p>
+    <div class="tl-rail" id="tlRail"><div class="tl-fill" id="tlFill"></div></div>
+    <div class="tl-card" id="tlCard"></div>
+    <div class="tl-nav">
+      <button class="btn ghost" id="tlPrev">← Oldingi</button>
+      <span id="tlCount"></span>
+      <button class="btn" id="tlNext">Keyingi →</button>
+    </div>
+  </div>
+
+  <div class="section-title" data-aos="fade-up">
+    <small>MASHHUR SHAXSLAR</small>
+    <h2>Aviatsiya qahramonlari</h2>
+  </div>
+  <div class="cards">
+    <div data-aos="flip-left"><div class="card tilt"><div class="card-content"><div class="card-icon">👨‍✈️</div><h3>Aka-uka Raytlar</h3><p>Birinchi boshqariladigan dvigatelli samolyotni yaratib, aviatsiya davrini boshlashdi.</p></div></div></div>
+    <div data-aos="flip-left" data-aos-delay="120"><div class="card tilt"><div class="card-content"><div class="card-icon">👩‍✈️</div><h3>Amelia Erxart</h3><p>Atlantika okeanini yolg'iz uchib o'tgan birinchi ayol uchuvchi (1932).</p></div></div></div>
+    <div data-aos="flip-left" data-aos-delay="240"><div class="card tilt"><div class="card-content"><div class="card-icon">🧑‍🔬</div><h3>Igor Sikorskiy</h3><p>Birinchi to'rt dvigatelli samolyot va zamonaviy vertolyotning yaratuvchisi.</p></div></div></div>
+  </div>
+
+  <!-- Samolyot qismlari -->
+  <div class="section-title" data-aos="fade-up">
+    <small>TUZILISH</small>
+    <h2>Samolyotning asosiy qismlari</h2>
+    <p>Qismni tanlang va u haqida batafsil bilib oling.</p>
+  </div>
+  <div class="parts">
+    <div class="parts-list" id="partsList" data-aos="fade-right"></div>
+    <div class="part-view" id="partView" data-aos="fade-left"></div>
+  </div>
+
+  <!-- Viktorina -->
+  <div class="section-title" id="quizSection" data-aos="fade-up">
+    <small>VIKTORINA</small>
+    <h2>Bilimingizni sinang</h2>
+    <p>6 ta savol — har biridan keyin to'g'ri javob va izoh ko'rsatiladi.</p>
+  </div>
+  <div class="quiz" id="quiz" data-aos="zoom-in"></div>
+</section>
+
+<!-- =====================================================
+     4. ALOQA (+ FAQ)
+     ===================================================== -->
+<section id="contact" class="page">
+  <div class="page-hero" style="background-image:url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1600&q=80')">
+    <small>ALOQA</small>
+    <h1>Biz bilan bog'laning</h1>
+    <p>Savol, taklif yoki fikringizni yozib qoldiring. Avval quyidagi savol-javoblarni ko'rib chiqing.</p>
+  </div>
+
+  <div class="two-columns" style="align-items:start">
+    <div class="info-box" style="margin:0" data-aos="fade-right">
+      <h2>SkyWorld jamoasi</h2>
+      <p>Loyihamiz samolyotlar va aviatsiya haqidagi bilimlarni boshqalar bilan bo'lishish uchun yaratilgan.</p>
+      <div class="feature"><h3>✈ Loyiha</h3><p>SkyWorld — Samolyotlar olami</p></div>
+      <div class="feature"><h3>🌍 Yo'nalish</h3><p>Aviatsiya, texnologiya va ta'lim</p></div>
+      <div class="feature"><h3>📍 Manzil</h3><p>Toshkent, O'zbekiston</p></div>
+      <div class="feature"><h3>💬 Takliflar</h3><p>Yangi g'oyalar va fikrlaringizni kutib qolamiz.</p></div>
+    </div>
+
+    <form id="contactForm" novalidate data-aos="fade-left">
+      <h2>Xabar yuborish</h2>
+      <div class="field">
+        <label for="name">Ismingiz</label>
+        <input id="name" type="text" placeholder="Ismingizni yozing" required minlength="2">
+        <div class="hint">Kamida 2 ta harf kiriting</div>
+      </div>
+      <div class="field">
+        <label for="email">Elektron pochta</label>
+        <input id="email" type="email" placeholder="email@example.com" required>
+        <div class="hint">To'g'ri email kiriting</div>
+      </div>
+      <div class="field">
+        <label for="topic">Mavzu</label>
+        <select id="topic" required>
+          <option value="">Mavzuni tanlang</option>
+          <option>Samolyotlar</option>
+          <option>Aviatsiya tarixi</option>
+          <option>Texnologiya</option>
+          <option>Loyiha haqida</option>
+          <option>Boshqa savol</option>
+        </select>
+        <div class="hint">Mavzuni tanlang</div>
+      </div>
+      <div class="field">
+        <label for="message">Xabaringiz</label>
+        <span class="counter" id="msgCount">0 / 500</span>
+        <textarea id="message" placeholder="Xabaringizni yozing..." required minlength="10" maxlength="500"></textarea>
+        <div class="hint">Kamida 10 ta belgi yozing</div>
+      </div>
+      <button class="btn" type="submit" id="sendBtn">Xabarni yuborish →</button>
+    </form>
+  </div>
+
+  <div class="section-title" data-aos="fade-up">
+    <small>SAVOL-JAVOB</small>
+    <h2>Ko'p beriladigan savollar</h2>
+  </div>
+  <div class="faq-search" data-aos="fade-up">
+    <div class="search" style="max-width:none"><input id="faqSearch" type="search" placeholder="Savollar ichidan qidirish..." aria-label="Savollar ichidan qidirish"></div>
+  </div>
+
+  <div class="accordion" id="faqAccordion">
+    <div class="acc-item open" data-aos="fade-up"><button class="acc-head">Samolyot qanday qilib havoda turadi?<span class="acc-icon">+</span></button><div class="acc-body"><div><p>Qanotning maxsus egilgan shakli tufayli uning ustidagi havo tezroq, ostidagi havo sekinroq oqadi. Natijada pastdagi bosim yuqoriroq bo'lib, samolyotni yuqoriga itaradi — bu ko'taruvchi kuch deyiladi. Buni "Samolyotlar" sahifasidagi simulyatorda sinab ko'ring.</p></div></div></div>
+    <div class="acc-item" data-aos="fade-up"><button class="acc-head">Samolyotlar qanday balandlikda uchadi?<span class="acc-icon">+</span></button><div class="acc-body"><div><p>Yo'lovchi laynerlari odatda 9 000 – 12 000 metr balandlikda uchadi. U yerda havo siyrak bo'lgani uchun qarshilik kam va yoqilg'i tejaladi.</p></div></div></div>
+    <div class="acc-item" data-aos="fade-up"><button class="acc-head">Turbulentlik xavflimi?<span class="acc-icon">+</span></button><div class="acc-body"><div><p>Turbulentlik — havo oqimlarining notekisligi. Zamonaviy samolyotlar undan ancha kuchli yuklamalarga chidaydigan qilib qurilgan. Eng muhimi — xavfsizlik kamarini taqib o'tirish.</p></div></div></div>
+    <div class="acc-item" data-aos="fade-up"><button class="acc-head">Nega parvozda telefonni "parvoz rejimi"ga qo'yish kerak?<span class="acc-icon">+</span></button><div class="acc-body"><div><p>Ko'plab telefonlar bir vaqtda yerdagi minoralarni qidirishi uchuvchilarning radioaloqasida shovqin keltirib chiqarishi mumkin. Bu ehtiyot chorasi hisoblanadi.</p></div></div></div>
+    <div class="acc-item" data-aos="fade-up"><button class="acc-head">Uchuvchi bo'lish uchun nima qilish kerak?<span class="acc-icon">+</span></button><div class="acc-body"><div><p>Aviatsiya o'quv yurtida nazariya va amaliy parvoz mashg'ulotlarini o'tash, tibbiy ko'rikdan o'tish va litsenziya olish kerak. Fizika, matematika va ingliz tilini yaxshi bilish juda muhim.</p></div></div></div>
+    <div class="acc-item" data-aos="fade-up"><button class="acc-head">Samolyot qancha yoqilg'i sarflaydi?<span class="acc-icon">+</span></button><div class="acc-body"><div><p>Boeing 747 kabi katta samolyot soatiga taxminan 10–12 tonna yoqilg'i sarflaydi. Ammo bir yo'lovchiga hisoblaganda, bu avtomobilda yolg'iz yurishdan ko'p emas.</p></div></div></div>
+    <div class="acc-item" data-aos="fade-up"><button class="acc-head">"Qora quti" aslida qora rangdami?<span class="acc-icon">+</span></button><div class="acc-body"><div><p>Yo'q! U yorqin to'q sariq rangda bo'ladi — halokatdan keyin oson topilishi uchun. U parvoz ma'lumotlari va kabinadagi suhbatlarni yozib boradi.</p></div></div></div>
+    <div class="acc-item" data-aos="fade-up"><button class="acc-head">Bu sayt kim tomonidan yaratilgan?<span class="acc-icon">+</span></button><div class="acc-body"><div><p>SkyWorld — aviatsiyaga qiziquvchi o'quvchilar uchun yaratilgan o'quv loyihasi. Taklif va savollaringizni yuqoridagi forma orqali yuborishingiz mumkin.</p></div></div></div>
+    <p class="empty" id="faqEmpty"><b>🤔</b>Bunday savol topilmadi. Uni yuqoridagi forma orqali bizga yuboring!</p>
+  </div>
+</section>
+
+</main>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <div class="logo">✈ Sky<span>World</span></div>
+      <p style="margin-top:10px">Samolyotlar olami — bilim va kashfiyotlar sari! Aviatsiyaga qiziquvchilar uchun o'quv loyihasi.</p>
+    </div>
+    <div>
+      <h4>Sahifalar</h4>
+      <button data-go="home">Bosh sahifa</button>
+      <button data-go="planes">Samolyotlar</button>
+      <button data-go="history">Tarix</button>
+      <button data-go="contact">Aloqa</button>
+    </div>
+    <div>
+      <h4>Interaktiv</h4>
+      <button data-go="home" data-target="calcSection">Parvoz kalkulyatori</button>
+      <button data-go="planes" data-target="simSection">Uchish simulyatori</button>
+      <button data-go="history" data-target="quizSection">Viktorina</button>
+      <button data-go="home" data-target="homeGallery">Galereya</button>
+    </div>
+  </div>
+  <p class="copy">© 2026 SkyWorld. O'quv loyihasi.</p>
+</footer>
+
+<!-- Samolyot modal -->
+<div class="modal" id="planeModal" aria-hidden="true">
+  <div class="modal-box" role="dialog" aria-modal="true">
+    <button class="modal-close" data-close aria-label="Yopish">×</button>
+    <img id="mImg" src="" alt="">
+    <div class="modal-body">
+      <h2 id="mTitle"></h2>
+      <p id="mText"></p>
+      <table class="spec-table" id="mSpecs"></table>
+      <button class="btn outline" id="mCompare" style="margin-top:18px">⚖ Solishtirishga qo'shish</button>
+    </div>
+  </div>
+</div>
+
+<!-- Galereya lightbox -->
+<div class="modal lightbox" id="lightbox" aria-hidden="true">
+  <button class="modal-close" data-close aria-label="Yopish">×</button>
+  <button class="lb-nav prev" aria-label="Oldingi">‹</button>
+  <div><img id="lbImg" src="" alt=""><p id="lbCap"></p></div>
+  <button class="lb-nav next" aria-label="Keyingi">›</button>
+</div>
+
+<div class="toast" id="toast"></div>
+<button class="to-top" id="toTop" aria-label="Yuqoriga">↑</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+<script>
+/* ================= MA'LUMOTLAR ================= */
+const IMG = (id, w = 800) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
+
+// speed — km/soat, range — km (solishtirish uchun)
+const planes = [
+  { cat: "passenger", label: "Yo'lovchi", title: "Yo'lovchi samolyoti", model: "Airbus A320", img: "1436491865332-7a61a109cc05", speed: 830, range: 6100, cap: "150–180 yo'lovchi",
+    short: "Odamlarni turli shahar va mamlakatlar o'rtasida tashiydi.",
+    text: "Yo'lovchi laynerlari — aviatsiyaning eng keng tarqalgan turi. Ular qulay salon, xavfsizlik tizimlari va tejamkor dvigatellar bilan jihozlangan. Airbus A320 va Boeing 737 dunyodagi eng ko'p ishlab chiqarilgan samolyotlardir.",
+    specs: { "Misol": "Airbus A320", "Yo'lovchilar": "150–180", "Tezlik": "~830 km/soat", "Masofa": "~6 100 km" } },
+  { cat: "passenger", label: "Yo'lovchi", title: "Uzoq masofali samolyot", model: "Boeing 787-9", img: "1474302770737-173ee21bab63", speed: 900, range: 14000, cap: "~290 yo'lovchi",
+    short: "Qit'alararo uzoq parvozlar uchun mo'ljallangan.",
+    text: "Keng fyuzelyajli bu samolyotlar ikki yo'lakli salonga ega va 15 soatdan ortiq to'xtovsiz ucha oladi. Boeing 787 Dreamliner kompozit materiallardan qurilgan va juda tejamkor.",
+    specs: { "Misol": "Boeing 787-9", "Yo'lovchilar": "~290", "Tezlik": "~900 km/soat", "Masofa": "~14 000 km" } },
+  { cat: "passenger", label: "Yo'lovchi", title: "Airbus A380", model: "Airbus A380", img: "1544016768-982d1554f0b9", speed: 900, range: 15000, cap: "500–850 yo'lovchi",
+    short: "Dunyodagi eng katta ikki qavatli yo'lovchi samolyoti.",
+    text: "A380 ikki to'liq qavatga ega va 800 dan ortiq yo'lovchini sig'dira oladi. Uning qanotlari kengligi deyarli futbol maydoni eniga teng.",
+    specs: { "Yo'lovchilar": "500–850", "Qanot kengligi": "79,8 m", "Tezlik": "~900 km/soat", "Masofa": "~15 000 km" } },
+  { cat: "small", label: "Kichik", title: "Kichik samolyot", model: "Cessna 172", img: "1464037866556-6812c9d1c72e", speed: 226, range: 1280, cap: "4 o'rin",
+    short: "O'quv parvozlari va qisqa masofali safarlarda ishlatiladi.",
+    text: "Bir dvigatelli yengil samolyotlar uchuvchilarni o'qitish, sport va qisqa sayohatlar uchun qo'llaniladi. Cessna 172 tarixdagi eng ko'p ishlab chiqarilgan samolyot hisoblanadi.",
+    specs: { "Misol": "Cessna 172", "O'rinlar": "4", "Tezlik": "~226 km/soat", "Masofa": "~1 280 km" } },
+  { cat: "cargo", label: "Yuk", title: "Yuk samolyoti", model: "Boeing 747-8F", img: "1540962351504-03099e0a754b", speed: 900, range: 8100, cap: "~137 t yuk",
+    short: "Tovarlar, jihozlar va boshqa yuklarni tashiydi.",
+    text: "Yuk samolyotlarida yo'lovchi o'rindiqlari bo'lmaydi, burun yoki dum qismi ochilib, katta yuklar ortiladi. Dunyo savdosining qimmatbaho qismi havo orqali tashiladi.",
+    specs: { "Misol": "Boeing 747-8F", "Yuk sig'imi": "~137 t", "Tezlik": "~900 km/soat", "Masofa": "~8 100 km" } },
+  { cat: "cargo", label: "Yuk", title: "Gigant yuk samolyoti", model: "An-124 Ruslan", img: "1529074963764-98f45c47344b", speed: 800, range: 5400, cap: "~150 t yuk",
+    short: "Juda katta va og'ir jihozlarni tashish uchun.",
+    text: "An-124 kabi gigantlar lokomotivlar, turbinalar va hatto boshqa samolyot qismlarini ham tashiy oladi. Ularning ichiga avtobus bemalol sig'adi.",
+    specs: { "Misol": "An-124 Ruslan", "Yuk sig'imi": "~150 t", "Tezlik": "~800 km/soat", "Uzunlik": "69 m" } },
+  { cat: "small", label: "Kichik", title: "Shaxsiy samolyot", model: "Gulfstream G650", img: "1506947411487-a56738267384", speed: 950, range: 13000, cap: "8–18 yo'lovchi",
+    short: "Shaxsiy safarlar va biznes parvozlar uchun.",
+    text: "Biznes-jetlar kam yo'lovchili, ammo juda qulay va tez. Ular kichik aeroportlardan ham ucha oladi va vaqtni tejaydi.",
+    specs: { "Misol": "Gulfstream G650", "Yo'lovchilar": "8–18", "Tezlik": "~950 km/soat", "Masofa": "~13 000 km" } },
+  { cat: "special", label: "Maxsus", title: "Tez yordam samolyoti", model: "King Air 350", img: "1556388158-158ea5ccacbd", speed: 560, range: 3300, cap: "Uchuvchi + shifokor",
+    short: "Bemorlarni tashish va qutqaruv ishlari uchun.",
+    text: "Sanitar aviatsiya samolyotlari ichida tibbiy jihozlar o'rnatilgan. Ular uzoq hududlardan bemorlarni tezda shifoxonaga yetkazadi.",
+    specs: { "Misol": "King Air 350", "Vazifa": "Tibbiy evakuatsiya", "Tezlik": "~560 km/soat", "Ish vaqti": "24/7" } },
+  { cat: "special", label: "Maxsus", title: "Ob-havo samolyoti", model: "WP-3D Orion", img: "1570710891163-6d3b5c47248b", speed: 550, range: 7400, cap: "Tadqiqot ekipaji",
+    short: "Bo'ronlar va atmosferani o'rganadi.",
+    text: "Maxsus jihozlangan samolyotlar dovullar ichiga kirib, ma'lumot yig'adi. Bu ma'lumotlar ob-havo prognozini aniqroq qilishga yordam beradi.",
+    specs: { "Misol": "WP-3D Orion", "Jihozlar": "Radar, datchiklar", "Balandlik": "~8 km gacha", "Davomiyligi": "10 soatgacha" } }
+];
+
+const cities = [
+  ["Toshkent", 41.26, 69.28], ["Samarqand", 39.70, 66.98], ["Dubay", 25.25, 55.36], ["Istanbul", 41.26, 28.74],
+  ["Moskva", 55.97, 37.41], ["London", 51.47, -0.45], ["Parij", 49.01, 2.55], ["Nyu-York", 40.64, -73.78],
+  ["Tokio", 35.55, 139.78], ["Seul", 37.46, 126.44], ["Pekin", 40.08, 116.58], ["Dehli", 28.56, 77.10]
+];
+
+const facts = [
+  ["⚡", "Tovushdan tez", "\"Konkord\" yo'lovchi samolyoti London–Nyu-York yo'lini atigi 3,5 soatda bosib o'tgan."],
+  ["🛩", "12 soniya", "Raytlarning 1903-yildagi birinchi parvozi atigi 12 soniya davom etgan va 37 metr masofani bosgan."],
+  ["🌡", "-55°C tashqarida", "10–11 km balandlikda havo harorati -50°C dan ham past bo'ladi."],
+  ["🌩", "Chaqmoq xavfsiz", "Har bir layner yiliga taxminan bir marta chaqmoq urishiga duch keladi, ammo korpus tokni tashqariga o'tkazadi."],
+  ["🏋", "575 tonna", "Airbus A380 to'liq yuklanganda 575 tonnagacha og'irlikda havoga ko'tarila oladi."],
+  ["🛡", "Eng xavfsiz transport", "Statistik jihatdan havo transporti avtomobilga nisbatan ancha xavfsizroq hisoblanadi."]
+];
+
+const galleryItems = [
+  ["1488085061387-422e29b40080", "Illyuminatordan quyosh botishi"],
+  ["1529074963764-98f45c47344b", "Moviy osmonda layner"],
+  ["1517479149777-5f3b1511d5ad", "Bulutlar ustida qanot"],
+  ["1542296332-2e4473faf563", "Kechqurungi uchish yo'lagi"],
+  ["1544016768-982d1554f0b9", "Pastdan ko'rinish"],
+  ["1517400508447-f8dd518b86db", "Parvozlar jadvali"],
+  ["1556388158-158ea5ccacbd", "Tog'lar ortidan qo'nish"],
+  ["1569154941061-e231b4725ef1", "Terminal oldida"],
+  ["1570710891163-6d3b5c47248b", "Oq bulutlar orasida"]
+];
+
+const timeline = [
+  ["IX asr", "🪶", "Abbos ibn Firnos", "Andalusiyalik olim qanot yasab, birinchilardan bo'lib sirpanib uchishga uringan."],
+  ["1783", "🎈", "Issiq havo shari", "Aka-uka Monlgolfyerlar issiq havo shari bilan insonni birinchi bor osmonga ko'tarishdi."],
+  ["1891", "🪁", "Otto Lilienthal planerlari", "Lilienthal planerlarda 2000 dan ortiq parvoz qilib, qanot nazariyasiga asos soldi."],
+  ["1903", "🛩", "Raytlarning birinchi parvozi", "Orvill va Uilbur Raytlar boshqariladigan, dvigatelli samolyot bilan muvaffaqiyatli parvoz qildilar."],
+  ["1927", "🌊", "Atlantika ustidan", "Charlz Lindberg Atlantika okeanini to'xtovsiz yolg'iz uchib o'tdi."],
+  ["1939", "🔥", "Reaktiv davr", "Birinchi reaktiv samolyot — Heinkel He 178 havoga ko'tarildi."],
+  ["1969", "✈", "Jumbo Jet va Konkord", "Boeing 747 va Konkord ilk bor parvoz qildi — ommaviy havo sayohati davri boshlandi."],
+  ["2005", "🏆", "Osmon giganti", "Dunyodagi eng katta yo'lovchi samolyoti Airbus A380 ilk parvozini amalga oshirdi."],
+  ["XXI asr", "🔋", "Yashil aviatsiya", "Kompozit materiallar, tejamkor dvigatellar va elektr samolyotlar ustida ishlar olib borilmoqda."]
+];
+
+const parts = [
+  ["🪽", "Qanotlar", "Havo oqimi ta'sirida ko'taruvchi kuch hosil qiladi. Qanot ichida yonilg'i baklari joylashgan, orqa qismidagi qanotchalar (eleronlar) samolyotni yon tomonga og'diradi.", ["Ko'taruvchi kuch", "Yonilg'i baki", "Eleronlar"]],
+  ["🔥", "Dvigatel", "Havoni so'rib, siqib, yoqilg'i bilan yoqadi va orqaga katta tezlikda otib chiqaradi. Natijada samolyot oldinga itariladi.", ["Tortish kuchi", "Turbina", "~1500°C"]],
+  ["🎛", "Kabina", "Uchuvchilar samolyotni boshqaradigan joy. Bu yerda yuzlab asboblar, ekranlar va avtopilot boshqaruvi joylashgan.", ["2 uchuvchi", "Avtopilot", "Radioaloqa"]],
+  ["🛞", "Shassi", "Uchish, qo'nish va yerda harakatlanish uchun g'ildiraklar tizimi. Parvoz paytida korpus ichiga yig'iladi.", ["Amortizator", "Tormoz", "Yig'iladi"]],
+  ["🧭", "Dum qismi", "Vertikal rul samolyotni chapga-o'ngga buradi, gorizontal stabilizator esa burnini ko'taradi yoki tushiradi.", ["Rul", "Stabilizator", "Muvozanat"]],
+  ["💺", "Fyuzelyaj", "Samolyotning asosiy tanasi. Yo'lovchilar salonidan tashqari, pastki qismida bagaj va yuk bo'limlari bor.", ["Salon", "Bagaj bo'limi", "Germetik"]]
+];
+
+const quizData = [
+  ["Raytlar birinchi dvigatelli parvozni qaysi yili amalga oshirgan?", ["1890", "1903", "1927", "1939"], 1, "1903-yil 17-dekabrda Kitti-Xok yaqinida."],
+  ["Raytlarning birinchi parvozi qancha davom etgan?", ["12 soniya", "1 daqiqa", "5 daqiqa", "1 soat"], 0, "Atigi 12 soniya va 37 metr — ammo bu tarixni o'zgartirdi."],
+  ["Dunyodagi eng katta yo'lovchi samolyoti qaysi?", ["Boeing 737", "Konkord", "Airbus A380", "Cessna 172"], 2, "A380 ikki qavatli va 850 tagacha yo'lovchini sig'diradi."],
+  ["\"Qora quti\" aslida qanday rangda?", ["Qora", "To'q sariq", "Kulrang", "Ko'k"], 1, "Halokatdan keyin oson topilishi uchun yorqin to'q sariq rangda bo'ladi."],
+  ["Atlantikani yolg'iz uchib o'tgan birinchi ayol kim?", ["Mari Kyuri", "Amelia Erxart", "Valentina Tereshkova", "Ada Lavleys"], 1, "Amelia Erxart buni 1932-yilda amalga oshirgan."],
+  ["Yo'lovchi laynerlari odatda qaysi balandlikda uchadi?", ["1–2 km", "3–5 km", "9–12 km", "20–25 km"], 2, "9–12 km da havo siyrak, qarshilik kam — yoqilg'i tejaladi."]
+];
+
+/* ================= YORDAMCHI ================= */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const canHover = matchMedia("(hover: hover)").matches;
+const PAGES = ["home", "planes", "history", "contact"];
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+
+/* ================= KONTENTNI YARATISH ================= */
+// Samolyot kartalari
+const planeBox = $("#planeCards");
+planeBox.innerHTML = planes.map((p, n) => `
+  <div class="card-wrap" data-cat="${p.cat}" data-i="${n}" data-aos="fade-up" data-aos-delay="${(n % 3) * 100}">
+    <article class="card tilt">
+      <div class="card-img">
+        <span class="badge">${p.label}</span>
+        <button class="fav" data-fav="${n}" aria-label="Sevimlilarga qo'shish">♡</button>
+        <img src="${IMG(p.img)}" alt="${p.title}" loading="lazy">
+        <div class="img-overlay"><span>Batafsil ko'rish</span></div>
+      </div>
+      <div class="card-content">
+        <h3>${p.title}</h3>
+        <p>${p.short}</p>
+        <div class="specs"><span>${p.model}</span><span>${p.speed} km/soat</span></div>
+        <button class="btn" data-plane="${n}">Batafsil →</button>
+      </div>
+    </article>
+  </div>`).join("") + `<p class="empty" id="planeEmpty"><b>🛫</b>Hech narsa topilmadi. Boshqa so'z yoki filtrni sinab ko'ring.</p>`;
+
+// Flip faktlar
+$("#factGrid").innerHTML = facts.map(([icon, title, text], n) => `
+  <button class="flip" data-aos="flip-up" data-aos-delay="${(n % 3) * 100}" aria-label="${title} — javobni ko'rish">
+    <div class="flip-inner">
+      <div class="flip-face flip-front"><div class="card-icon">${icon}</div><h3>${title}</h3><small>Bosing ↻</small></div>
+      <div class="flip-face flip-back"><h3 style="margin-bottom:8px">${icon} ${title}</h3><p>${text}</p></div>
+    </div>
+  </button>`).join("");
+
+// Galereya
+$("#galleryGrid").innerHTML = galleryItems.map(([id, cap], n) =>
+  `<figure data-i="${n}" data-aos="zoom-in" data-aos-delay="${(n % 3) * 80}"><img src="${IMG(id, 700)}" alt="${cap}" loading="lazy"><figcaption>${cap}</figcaption></figure>`
+).join("");
+
+/* ================= AOS ================= */
+const hasAOS = typeof AOS !== "undefined";
+if (hasAOS) {
+  AOS.init({ duration: 800, easing: "ease-out-cubic", once: true, offset: 60, disable: reduceMotion });
+} else {
+  // CDN yuklanmasa ham kontent ko'rinib tursin
+  $$("[data-aos]").forEach(el => el.removeAttribute("data-aos"));
+}
+// Yashirin sahifa ochilganda animatsiyalarni qaytadan ishga tushirish
+function replayAOS(page) {
+  if (!hasAOS) return;
+  $$("[data-aos]", page).forEach(el => el.classList.remove("aos-animate"));
+  requestAnimationFrame(() => AOS.refreshHard());
+}
+
+/* ================= SAHIFALARNI ALMASHTIRISH ================= */
+function openPage(id, push = true, target = null) {
+  if (!PAGES.includes(id)) id = "home";
+  const page = document.getElementById(id);
+  const changed = !page.classList.contains("active");
+  $$(".page").forEach(p => p.classList.toggle("active", p === page));
+  $$("[data-page]").forEach(b => b.classList.toggle("active", b.dataset.page === id));
+  movePill();
+  closeMenu();
+  if (changed) replayAOS(page);
+  if (target) {
+    setTimeout(() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" }), changed ? 150 : 0);
+  } else {
+    window.scrollTo({ top: 0, behavior: changed ? "auto" : "smooth" });
+  }
+  if (push && changed) history.pushState(null, "", "#" + id);
+  if (id === "planes") simLoop();
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-page],[data-go]");
+  if (b) openPage(b.dataset.page || b.dataset.go, true, b.dataset.target || null);
+});
+window.addEventListener("popstate", () => openPage(location.hash.slice(1) || "home", false));
+
+// Navbar "pill" indikatori
+function movePill() {
+  const active = $("#deskNav button.active"), pill = $("#navPill");
+  if (!active) return;
+  pill.style.left = active.offsetLeft + "px";
+  pill.style.width = active.offsetWidth + "px";
+}
+window.addEventListener("resize", movePill);
+
+/* ================= MOBIL MENYU ================= */
+const burger = $("#burger"), mobileNav = $("#mobileNav"), overlay = $("#overlay");
+function openMenu() {
+  burger.classList.add("open"); burger.setAttribute("aria-expanded", "true");
+  mobileNav.classList.add("open"); overlay.classList.add("show");
+  document.body.classList.add("lock");
+  $$(".mobile-nav .link").forEach((l, i) => l.style.transitionDelay = (0.05 * i + 0.1) + "s");
+}
+function closeMenu() {
+  burger.classList.remove("open"); burger.setAttribute("aria-expanded", "false");
+  mobileNav.classList.remove("open"); overlay.classList.remove("show");
+  $$(".mobile-nav .link").forEach(l => l.style.transitionDelay = "0s");
+  if (!$(".modal.show")) document.body.classList.remove("lock");
+}
+burger.addEventListener("click", () => mobileNav.classList.contains("open") ? closeMenu() : openMenu());
+$("#closeNav").addEventListener("click", closeMenu);
+overlay.addEventListener("click", closeMenu);
+
+/* ================= SCROLL: HEADER, PROGRESS, YUQORIGA ================= */
+function onScroll() {
+  const max = document.documentElement.scrollHeight - innerHeight;
+  $("#scrollBar").style.width = (max > 0 ? scrollY / max * 100 : 0) + "%";
+  $("#header").classList.toggle("scrolled", scrollY > 20);
+  $("#toTop").classList.toggle("show", scrollY > 500);
+}
+window.addEventListener("scroll", onScroll, { passive: true });
+$("#toTop").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+
+/* ================= TUGMA TO'LQINI + 3D TILT ================= */
+document.addEventListener("pointerdown", e => {
+  const b = e.target.closest(".btn");
+  if (!b || reduceMotion) return;
+  const r = b.getBoundingClientRect(), s = Math.max(r.width, r.height);
+  const rip = document.createElement("span");
+  rip.className = "ripple";
+  rip.style.cssText = `width:${s}px;height:${s}px;left:${e.clientX - r.left - s / 2}px;top:${e.clientY - r.top - s / 2}px`;
+  b.appendChild(rip);
+  setTimeout(() => rip.remove(), 650);
+});
+
+if (canHover && !reduceMotion) {
+  document.addEventListener("mousemove", e => {
+    const el = e.target.closest(".tilt");
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+    el.classList.add("tilting");
+    el.style.transform = `perspective(900px) rotateY(${x * 10}deg) rotateX(${-y * 10}deg) translateY(-8px)`;
+  });
+  document.addEventListener("mouseout", e => {
+    const el = e.target.closest(".tilt");
+    if (el && !el.contains(e.relatedTarget)) { el.classList.remove("tilting"); el.style.transform = ""; }
+  });
+}
+
+/* ================= HERO KARUSEL ================= */
+(function heroSlider() {
+  const root = $("#heroSlider"), slides = $$(".slide", root), dotsBox = $(".dots", root), bar = $(".progress", root);
+  let i = 0, timer;
+  slides.forEach((_, n) => {
+    const d = document.createElement("button");
+    d.setAttribute("aria-label", (n + 1) + "-slayd");
+    d.addEventListener("click", () => go(n));
+    dotsBox.appendChild(d);
+  });
+  const dots = $$("button", dotsBox);
+  function go(n) {
+    slides[i].classList.remove("active");
+    i = (n + slides.length) % slides.length;
+    slides[i].classList.add("active");
+    dots.forEach((d, k) => d.classList.toggle("active", k === i));
+    restart();
+  }
+  function restart() {
+    clearTimeout(timer);
+    bar.classList.remove("run"); void bar.offsetWidth; bar.classList.add("run");
+    timer = setTimeout(() => go(i + 1), 6000);
+  }
+  $(".prev", root).addEventListener("click", () => go(i - 1));
+  $(".next", root).addEventListener("click", () => go(i + 1));
+  let x0 = null;
+  root.addEventListener("touchstart", e => x0 = e.touches[0].clientX, { passive: true });
+  root.addEventListener("touchend", e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 50) go(dx < 0 ? i + 1 : i - 1);
+    x0 = null;
+  });
+  root.addEventListener("mouseenter", () => { clearTimeout(timer); bar.style.animationPlayState = "paused"; });
+  root.addEventListener("mouseleave", () => { bar.style.animationPlayState = "running"; restart(); });
+  dots[0].classList.add("active");
+  restart();
+})();
+
+/* ================= STATISTIKA SANOG'I ================= */
+const countIO = new IntersectionObserver(entries => entries.forEach(en => {
+  if (!en.isIntersecting) return;
+  countUp(en.target); countIO.unobserve(en.target);
+}), { threshold: .5 });
+$$("[data-count]").forEach(el => countIO.observe(el));
+function countUp(el) {
+  const end = +el.dataset.count, suffix = el.dataset.suffix || "", plain = "plain" in el.dataset;
+  const start = plain ? 1800 : 0, t0 = performance.now(), dur = 1600;
+  (function tick(t) {
+    const k = Math.min((t - t0) / dur, 1), v = Math.round(start + (end - start) * (1 - Math.pow(1 - k, 3)));
+    el.textContent = (plain ? v : v.toLocaleString("ru-RU")) + suffix;
+    if (k < 1) requestAnimationFrame(tick);
+  })(t0);
+}
+
+/* ================= PARVOZ KALKULYATORI ================= */
+(function calculator() {
+  const from = $("#fromCity"), to = $("#toCity"), planeSel = $("#calcPlane");
+  const opts = cities.map(([n], i) => `<option value="${i}">${n}</option>`).join("");
+  from.innerHTML = opts; to.innerHTML = opts;
+  from.value = 0; to.value = 8;
+
+  const line = $("#routeLine"), icon = $("#calcPlaneIcon"), len = line.getTotalLength();
+  line.style.strokeDasharray = len;
+
+  function haversine(a, b) {
+    const R = 6371, rad = d => d * Math.PI / 180;
+    const dLat = rad(b[1] - a[1]), dLon = rad(b[2] - a[2]);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a[1])) * Math.cos(rad(b[1])) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+  function placePlane(k) {
+    const d = len * k, p = line.getPointAtLength(d), q = line.getPointAtLength(Math.min(d + 1, len));
+    const ang = Math.atan2(q.y - p.y, q.x - p.x) * 180 / Math.PI;
+    icon.setAttribute("transform", `translate(${p.x} ${p.y}) rotate(${ang})`);
+    line.style.strokeDashoffset = len * (1 - k);
+  }
+  function animateNumber(el, end, fmt) {
+    const t0 = performance.now();
+    (function tick(t) {
+      const k = Math.min((t - t0) / 1600, 1), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = fmt(end * e);
+      if (k < 1) requestAnimationFrame(tick);
+    })(t0);
+  }
+  let raf;
+  function run() {
+    const a = cities[from.value], b = cities[to.value];
+    $("#fromLabel").textContent = a[0]; $("#toLabel").textContent = b[0];
+    if (a === b) {
+      $("#rDist").textContent = "0 km"; $("#rTime").textContent = "—"; $("#rCo2").textContent = "—";
+      placePlane(0); showToast("Iltimos, ikki xil shaharni tanlang.");
+      return;
+    }
+    const dist = haversine(a, b), speed = +planeSel.value;
+    const hours = dist / speed + 0.5; // +30 daqiqa uchish va qo'nishga
+    animateNumber($("#rDist"), dist, v => Math.round(v).toLocaleString("ru-RU") + " km");
+    animateNumber($("#rTime"), hours, v => `${Math.floor(v)} s ${Math.round((v % 1) * 60)} d`);
+    animateNumber($("#rCo2"), dist * 0.09, v => Math.round(v) + " kg");
+    cancelAnimationFrame(raf);
+    if (reduceMotion) return placePlane(1);
+    const t0 = performance.now(), dur = 1800;
+    (function fly(t) {
+      const k = Math.min((t - t0) / dur, 1);
+      placePlane(k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+      if (k < 1) raf = requestAnimationFrame(fly);
+    })(t0);
+  }
+  $("#calcBtn").addEventListener("click", run);
+  [from, to, planeSel].forEach(s => s.addEventListener("change", run));
+  $("#swapCity").addEventListener("click", () => { [from.value, to.value] = [to.value, from.value]; run(); });
+  placePlane(0);
+  $("#fromLabel").textContent = cities[0][0]; $("#toLabel").textContent = cities[8][0];
+  // Kalkulyator ko'rinishga kelganda bir marta avtomatik ishga tushadi
+  const io = new IntersectionObserver(([en]) => { if (en.isIntersecting) { run(); io.disconnect(); } }, { threshold: .5 });
+  io.observe($(".calc-map"));
+})();
+
+/* ================= FLIP KARTALAR ================= */
+$("#factGrid").addEventListener("click", e => {
+  const f = e.target.closest(".flip");
+  if (f) f.classList.toggle("flipped");
+});
+
+/* ================= KARTA KARUSELI ================= */
+$$("[data-track]").forEach(btn => btn.addEventListener("click", () => scrollTrack(btn.dataset.track, +btn.dataset.dir)));
+function scrollTrack(id, dir) {
+  const track = document.getElementById(id), step = track.firstElementChild.getBoundingClientRect().width + 22;
+  const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 5;
+  if (dir > 0 && atEnd) track.scrollTo({ left: 0 }); else track.scrollBy({ left: step * dir });
+}
+// Fikrlar avtomatik aylanadi (sichqoncha ustida bo'lsa to'xtaydi)
+let reviewsHover = false;
+$("#reviews").addEventListener("mouseenter", () => reviewsHover = true);
+$("#reviews").addEventListener("mouseleave", () => reviewsHover = false);
+setInterval(() => { if (!reviewsHover && $("#home").classList.contains("active") && !document.hidden) scrollTrack("reviews", 1); }, 4500);
+
+/* ================= SAMOLYOTLAR: QIDIRUV, FILTR, SEVIMLILAR ================= */
+let favs = new Set(store.get("skyFavs", []));
+let curFilter = "all";
+
+function renderFavs() {
+  $$(".fav").forEach(b => {
+    const on = favs.has(+b.dataset.fav);
+    b.textContent = on ? "♥" : "♡";
+    b.setAttribute("aria-pressed", on);
+  });
+}
+function updateCounts() {
+  $$("#planeFilters button").forEach(b => {
+    const f = b.dataset.filter;
+    const n = f === "all" ? planes.length : f === "fav" ? favs.size : planes.filter(p => p.cat === f).length;
+    let em = $("em", b);
+    if (!em) { em = document.createElement("em"); b.appendChild(em); }
+    em.textContent = n;
+  });
+}
+function applyFilter() {
+  const q = $("#planeSearch").value.trim().toLowerCase();
+  let shown = 0;
+  $$("#planeCards .card-wrap").forEach(w => {
+    const p = planes[+w.dataset.i];
+    const okCat = curFilter === "all" || (curFilter === "fav" ? favs.has(+w.dataset.i) : p.cat === curFilter);
+    const okText = !q || (p.title + " " + p.model + " " + p.short).toLowerCase().includes(q);
+    const show = okCat && okText;
+    const wasHidden = w.classList.contains("hidden");
+    w.classList.toggle("hidden", !show);
+    if (show) {
+      shown++;
+      w.classList.add("aos-animate");
+      if (wasHidden && !reduceMotion) w.animate([{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "none" }], { duration: 380, easing: "ease-out" });
+    }
+  });
+  $("#planeEmpty").classList.toggle("show", shown === 0);
+}
+$$("#planeFilters button").forEach(b => b.addEventListener("click", () => {
+  curFilter = b.dataset.filter;
+  $$("#planeFilters button").forEach(x => x.classList.toggle("active", x === b));
+  applyFilter();
+}));
+$("#planeSearch").addEventListener("input", applyFilter);
+
+/* ================= SAMOLYOT MODAL ================= */
+let modalPlane = 0;
+function openModal(m) { m.classList.add("show"); m.setAttribute("aria-hidden", "false"); document.body.classList.add("lock"); }
+function closeModal(m) { m.classList.remove("show"); m.setAttribute("aria-hidden", "true"); document.body.classList.remove("lock"); }
+
+planeBox.addEventListener("click", e => {
+  const fav = e.target.closest(".fav");
+  if (fav) {
+    const n = +fav.dataset.fav;
+    favs.has(n) ? favs.delete(n) : favs.add(n);
+    store.set("skyFavs", [...favs]);
+    fav.classList.remove("on"); void fav.offsetWidth; fav.classList.add("on");
+    renderFavs(); updateCounts();
+    showToast(favs.has(n) ? `❤ "${planes[n].title}" sevimlilarga qo'shildi` : "Sevimlilardan olib tashlandi");
+    if (curFilter === "fav") applyFilter();
+    return;
+  }
+  const wrap = e.target.closest(".card-wrap");
+  if (!wrap) return;
+  const p = planes[modalPlane = +wrap.dataset.i];
+  $("#mImg").src = IMG(p.img, 1200); $("#mImg").alt = p.title;
+  $("#mTitle").textContent = p.title;
+  $("#mText").textContent = p.text;
+  $("#mSpecs").innerHTML = Object.entries(p.specs).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+  openModal($("#planeModal"));
+});
+$("#mCompare").addEventListener("click", () => {
+  closeModal($("#planeModal"));
+  $("#cmpA").value = modalPlane;
+  if (+$("#cmpB").value === modalPlane) $("#cmpB").value = (modalPlane + 1) % planes.length;
+  renderCompare();
+  $(".compare").scrollIntoView({ behavior: "smooth", block: "center" });
+});
+$$(".modal").forEach(m => m.addEventListener("click", e => {
+  if (e.target === m || e.target.closest("[data-close]")) closeModal(m);
+}));
+
+/* ================= SOLISHTIRISH ================= */
+(function compareInit() {
+  const opts = planes.map((p, i) => `<option value="${i}">${p.model} — ${p.title}</option>`).join("");
+  $("#cmpA").innerHTML = opts; $("#cmpB").innerHTML = opts;
+  $("#cmpA").value = 2; $("#cmpB").value = 3;
+  $("#cmpA").addEventListener("change", renderCompare);
+  $("#cmpB").addEventListener("change", renderCompare);
+})();
+function renderCompare() {
+  const a = planes[$("#cmpA").value], b = planes[$("#cmpB").value];
+  $("#cmpALabel").textContent = a.model; $("#cmpBLabel").textContent = b.model;
+  const rows = [
+    ["Tezlik", "speed", 1000, v => v + " km/soat"],
+    ["Uchish masofasi", "range", 16000, v => v.toLocaleString("ru-RU") + " km"]
+  ];
+  $("#cmpBars").innerHTML = rows.map(([t, k, max, f]) => `
+    <div class="bar-row"><h4>${t}</h4>
+      <div class="bar"><div class="track-line"><div class="fill a" data-w="${a[k] / max * 100}"></div></div><b>${f(a[k])}</b></div>
+      <div class="bar"><div class="track-line"><div class="fill b" data-w="${b[k] / max * 100}"></div></div><b>${f(b[k])}</b></div>
+    </div>`).join("") + `
+    <div class="bar-row"><h4>Sig'im</h4><p style="font-weight:700">${a.cap} <span style="color:var(--muted)">vs</span> ${b.cap}</p></div>`;
+  requestAnimationFrame(() => requestAnimationFrame(() => $$("#cmpBars .fill").forEach(f => f.style.width = f.dataset.w + "%")));
+}
+// Solishtirish bloki ko'rinishga kelganda chiziqlar to'ladi
+new IntersectionObserver(([en], o) => { if (en.isIntersecting) { renderCompare(); o.disconnect(); } }, { threshold: .3 }).observe($(".compare"));
+
+/* ================= UCHISH SIMULYATORI ================= */
+const forceText = {
+  lift: "<b>Ko'taruvchi kuch</b> — qanot ustidan havo tezroq oqadi, bosim farqi samolyotni yuqoriga itaradi. Tezlik 2 marta oshsa, bu kuch 4 marta oshadi.",
+  weight: "<b>Og'irlik</b> — Yerning tortish kuchi. Samolyot uchishi uchun ko'taruvchi kuch og'irlikdan katta bo'lishi kerak.",
+  thrust: "<b>Tortish kuchi</b> — dvigatel havoni orqaga otib, samolyotni oldinga itaradi. U qarshilikni yengib, tezlik beradi.",
+  drag: "<b>Qarshilik</b> — havoning harakatga to'sqinligi. Tezlik oshgani sari u ham kuchayadi, shu sababli samolyotlar silliq shaklda quriladi."
+};
+const TAKEOFF = 260;
+let simV = 0, simX = 0, simRaf = null;
+function updateSim() {
+  simV = +$("#simSpeed").value;
+  const ratio = (simV / TAKEOFF) ** 2;            // ko'taruvchi kuch ~ v²
+  const pct = Math.round(ratio * 100);
+  const up = ratio >= 1;
+  const plane = $("#simPlane");
+  plane.style.setProperty("--lift", Math.min(20 + ratio * 70, 120) + "px");
+  plane.style.setProperty("--thrust", (simV > 0 ? 30 + simV / 6 : 16) + "px");
+  plane.style.setProperty("--drag", (16 + ratio * 40) + "px");
+  plane.style.setProperty("--y", up ? -Math.min((ratio - 1) * 160 + 40, 130) + "px" : "0px");
+  plane.style.setProperty("--pitch", up ? "-8deg" : simV > TAKEOFF * .85 ? "-3deg" : "0deg");
+  $("#simSpeedVal").textContent = simV + " km/soat";
+  $("#simLiftVal").textContent = pct + "%";
+  const m = $("#simMeter");
+  m.style.width = Math.min(pct, 100) + "%";
+  m.style.background = up ? "var(--green)" : pct > 70 ? "var(--amber)" : "var(--sky)";
+  const st = $("#simStatus");
+  st.classList.toggle("up", up);
+  st.textContent = up ? "✈ Havoga ko'tarildi!" : simV === 0 ? "Yerda turibdi" : "Tezlik oshmoqda...";
+  simLoop();
+}
+// Bulut va yo'lak harakati tezlikka bog'liq
+function simLoop() {
+  if (simRaf || reduceMotion) return;
+  (function step() {
+    if (simV === 0 || !$("#planes").classList.contains("active")) { simRaf = null; return; }
+    simX -= simV / 40;
+    $("#simClouds").style.backgroundPositionX = simX * .5 + "px";
+    $("#simRunway").style.backgroundPositionX = simX * 2 + "px";
+    simRaf = requestAnimationFrame(step);
+  })();
+}
+$("#simSpeed").addEventListener("input", updateSim);
+$("#forceChips").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  const f = b.dataset.force;
+  $$("#forceChips button").forEach(x => x.classList.toggle("active", x === b));
+  $("#forceInfo").innerHTML = forceText[f];
+  const arrow = $(`.arrow[data-force="${f}"]`);
+  $$(".arrow").forEach(a => a.classList.remove("focus"));
+  void arrow.offsetWidth; arrow.classList.add("focus");
+});
+updateSim();
+
+/* ================= TEXNOLOGIYA TABLARI ================= */
+$$("#techTabs button").forEach(b => b.addEventListener("click", () => {
+  $$("#techTabs button").forEach(x => x.classList.toggle("active", x === b));
+  $$(".tab-panel").forEach(p => p.classList.toggle("active", p.dataset.panel === b.dataset.tab));
+}));
+
+/* ================= INTERAKTIV TIMELINE ================= */
+(function timelineInit() {
+  const rail = $("#tlRail"), card = $("#tlCard");
+  let cur = 3;
+  rail.insertAdjacentHTML("beforeend", timeline.map(([y], i) => `<button data-i="${i}">${y}</button>`).join(""));
+  const btns = $$("button", rail);
+  function show(i) {
+    cur = (i + timeline.length) % timeline.length;
+    const [year, icon, title, text] = timeline[cur];
+    card.innerHTML = `<div class="tl-icon">${icon}</div><div><div class="year">${year}</div><h3>${title}</h3><p>${text}</p></div>`;
+    card.classList.remove("anim"); void card.offsetWidth; card.classList.add("anim");
+    btns.forEach((b, k) => { b.classList.toggle("active", k === cur); b.classList.toggle("done", k < cur); });
+    const first = btns[0], act = btns[cur];
+    $("#tlFill").style.width = (act.offsetLeft + act.offsetWidth / 2 - first.offsetLeft - first.offsetWidth / 2) + "px";
+    $("#tlCount").textContent = `${cur + 1} / ${timeline.length}`;
+    rail.scrollTo({ left: act.offsetLeft - rail.clientWidth / 2 + act.offsetWidth / 2, behavior: "smooth" });
+  }
+  rail.addEventListener("click", e => { const b = e.target.closest("button"); if (b) show(+b.dataset.i); });
+  $("#tlPrev").addEventListener("click", () => show(cur - 1));
+  $("#tlNext").addEventListener("click", () => show(cur + 1));
+  document.addEventListener("keydown", e => {
+    if (!$("#history").classList.contains("active") || $(".modal.show") || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+    if (e.key === "ArrowLeft") show(cur - 1);
+    if (e.key === "ArrowRight") show(cur + 1);
+  });
+  window.showTimeline = () => show(cur);
+  window.addEventListener("resize", () => { if ($("#history").classList.contains("active")) show(cur); });
+})();
+
+/* ================= SAMOLYOT QISMLARI ================= */
+(function partsInit() {
+  const list = $("#partsList"), view = $("#partView");
+  list.innerHTML = parts.map(([icon, name], i) => `<button data-i="${i}"><span>${icon}</span>${name}</button>`).join("");
+  function show(i) {
+    const [icon, name, text, tags] = parts[i];
+    $$("button", list).forEach((b, k) => b.classList.toggle("active", k === i));
+    view.innerHTML = `<div class="big">${icon}</div><h3>${name}</h3><p>${text}</p><div class="specs">${tags.map(t => `<span>${t}</span>`).join("")}</div>`;
+    view.classList.remove("anim"); void view.offsetWidth; view.classList.add("anim");
+  }
+  list.addEventListener("click", e => { const b = e.target.closest("button"); if (b) show(+b.dataset.i); });
+  show(0);
+})();
+
+/* ================= VIKTORINA ================= */
+(function quizInit() {
+  const box = $("#quiz");
+  let q = 0, score = 0;
+  const best = () => store.get("skyQuizBest", 0);
+  function render() {
+    if (q >= quizData.length) return result();
+    const [question, options] = quizData[q];
+    box.innerHTML = `
+      <div class="quiz-top"><span>Savol ${q + 1} / ${quizData.length}</span><span>Ball: ${score}</span></div>
+      <div class="quiz-bar"><span style="width:${q / quizData.length * 100}%"></span></div>
+      <div class="quiz-body anim">
+        <h3>${question}</h3>
+        <div class="options">${options.map((o, i) => `<button data-i="${i}">${String.fromCharCode(65 + i)}) ${o}</button>`).join("")}</div>
+        <div class="quiz-note" id="quizNote"></div>
+        <button class="btn" id="quizNext" style="display:none;margin-top:16px">${q === quizData.length - 1 ? "Natijani ko'rish" : "Keyingi savol →"}</button>
+      </div>`;
+  }
+  function result() {
+    if (score > best()) store.set("skyQuizBest", score);
+    const pct = score / quizData.length;
+    const [emoji, msg] = pct === 1 ? ["🏆", "Mukammal! Siz haqiqiy aviatsiya mutaxassisisiz!"]
+      : pct >= .66 ? ["🛫", "Zo'r natija! Yana bir oz — va siz ekspertsiz."]
+      : pct >= .33 ? ["🧭", "Yomon emas! Tarix bo'limini qayta ko'rib chiqing."]
+      : ["🪂", "Hechqisi yo'q — sahifani o'qib, yana urinib ko'ring!"];
+    box.innerHTML = `
+      <div class="quiz-bar"><span style="width:100%"></span></div>
+      <div class="quiz-result quiz-body anim">
+        <div class="big">${emoji}</div>
+        <div class="score">${score} / ${quizData.length}</div>
+        <p style="color:var(--muted);margin:8px 0 4px">${msg}</p>
+        <p style="font-size:14px;color:var(--muted)">Eng yaxshi natijangiz: <b>${Math.max(best(), score)} / ${quizData.length}</b></p>
+        <button class="btn" id="quizRestart" style="margin-top:16px">↻ Qaytadan boshlash</button>
+      </div>`;
+  }
+  box.addEventListener("click", e => {
+    const opt = e.target.closest(".options button");
+    if (opt) {
+      const [, , right, note] = quizData[q], pick = +opt.dataset.i;
+      $$(".options button", box).forEach((b, i) => {
+        b.disabled = true;
+        if (i === right) b.classList.add("right");
+      });
+      if (pick === right) score++; else opt.classList.add("wrong");
+      const n = $("#quizNote");
+      n.innerHTML = (pick === right ? "✅ <b>To'g'ri!</b> " : "❌ <b>Noto'g'ri.</b> ") + note;
+      n.classList.add("show");
+      $(".quiz-top span:last-child", box).textContent = "Ball: " + score;
+      $("#quizNext").style.display = "inline-flex";
+      return;
+    }
+    if (e.target.closest("#quizNext")) { q++; render(); }
+    if (e.target.closest("#quizRestart")) { q = 0; score = 0; render(); }
+  });
+  render();
+})();
+
+/* ================= GALEREYA LIGHTBOX ================= */
+const lb = $("#lightbox");
+let gIndex = 0;
+function showLb(n) {
+  gIndex = (n + galleryItems.length) % galleryItems.length;
+  const [id, cap] = galleryItems[gIndex];
+  $("#lbImg").src = IMG(id, 1600); $("#lbImg").alt = cap;
+  $("#lbCap").textContent = `${cap} (${gIndex + 1}/${galleryItems.length})`;
+}
+$("#galleryGrid").addEventListener("click", e => {
+  const f = e.target.closest("figure");
+  if (f) { showLb(+f.dataset.i); openModal(lb); }
+});
+$(".lb-nav.prev", lb).addEventListener("click", () => showLb(gIndex - 1));
+$(".lb-nav.next", lb).addEventListener("click", () => showLb(gIndex + 1));
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { $$(".modal.show").forEach(closeModal); closeMenu(); }
+  if (lb.classList.contains("show")) {
+    if (e.key === "ArrowLeft") showLb(gIndex - 1);
+    if (e.key === "ArrowRight") showLb(gIndex + 1);
+  }
+});
+
+/* ================= FAQ: ACCORDION + QIDIRUV ================= */
+$$("#faqAccordion .acc-head").forEach(head => {
+  head.setAttribute("aria-expanded", head.parentElement.classList.contains("open"));
+  head.addEventListener("click", () => {
+    const item = head.parentElement, wasOpen = item.classList.contains("open");
+    $$("#faqAccordion .acc-item").forEach(x => { x.classList.remove("open"); $(".acc-head", x).setAttribute("aria-expanded", "false"); });
+    if (!wasOpen) { item.classList.add("open"); head.setAttribute("aria-expanded", "true"); }
+  });
+});
+$("#faqSearch").addEventListener("input", e => {
+  const q = e.target.value.trim().toLowerCase();
+  let shown = 0;
+  $$("#faqAccordion .acc-item").forEach(it => {
+    const ok = !q || it.textContent.toLowerCase().includes(q);
+    it.classList.toggle("hidden", !ok);
+    if (ok) { shown++; it.classList.add("aos-animate"); }
+  });
+  $("#faqEmpty").classList.toggle("show", shown === 0);
+});
+
+/* ================= FORMA: JONLI TEKSHIRUV ================= */
+const toast = $("#toast");
+function showToast(msg) {
+  toast.textContent = msg; toast.classList.add("show");
+  clearTimeout(showToast.t); showToast.t = setTimeout(() => toast.classList.remove("show"), 3500);
+}
+const form = $("#contactForm");
+const fields = $$("input, select, textarea", form);
+function check(el) {
+  const ok = el.checkValidity() && el.value.trim().length >= (+el.getAttribute("minlength") || 0);
+  el.closest(".field").classList.toggle("valid", ok);
+  el.closest(".field").classList.toggle("invalid", !ok);
+  return ok;
+}
+fields.forEach(el => {
+  el.addEventListener("blur", () => { if (el.value) check(el); });
+  el.addEventListener("input", () => { if (el.closest(".field").classList.contains("invalid") || el.closest(".field").classList.contains("valid")) check(el); });
+});
+$("#message").addEventListener("input", e => {
+  const n = e.target.value.length;
+  $("#msgCount").textContent = `${n} / 500`;
+  $("#msgCount").style.color = n > 450 ? "var(--red)" : "";
+});
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  const allOk = fields.map(check).every(Boolean);
+  if (!allOk) {
+    const bad = $(".field.invalid", form);
+    bad.animate([{ transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "none" }], { duration: 300 });
+    $("input,select,textarea", bad).focus();
+    return showToast("Iltimos, belgilangan maydonlarni to'g'rilang.");
+  }
+  const btn = $("#sendBtn"), name = $("#name").value.trim();
+  btn.disabled = true; btn.textContent = "Yuborilmoqda...";
+  setTimeout(() => {
+    if (!reduceMotion) {
+      const r = btn.getBoundingClientRect(), p = document.createElement("div");
+      p.className = "paper-plane"; p.textContent = "✈";
+      p.style.left = r.left + r.width / 2 + "px"; p.style.top = r.top + "px";
+      document.body.appendChild(p); setTimeout(() => p.remove(), 1500);
+    }
+    showToast(`Rahmat, ${name}! ✈ Xabaringiz qabul qilindi (demo — serverga yuborilmadi).`);
+    form.reset(); $("#msgCount").textContent = "0 / 500";
+    $$(".field", form).forEach(f => f.classList.remove("valid", "invalid"));
+    btn.disabled = false; btn.textContent = "Xabarni yuborish →";
+  }, 900);
+});
+
+/* ================= ISHGA TUSHIRISH ================= */
+renderFavs(); updateCounts();
+function hideLoader() {
+  $("#loader").classList.add("hide");
+  document.body.classList.remove("lock");
+  movePill();
+  if (hasAOS) AOS.refresh();
+}
+window.addEventListener("load", hideLoader);
+setTimeout(hideLoader, 2500);
+openPage(location.hash.slice(1) || "home", false);
+// Timeline faqat sahifa ko'rinib turganda o'lchanadi
+new MutationObserver(() => { if ($("#history").classList.contains("active")) window.showTimeline(); })
+  .observe($("#history"), { attributes: true, attributeFilter: ["class"] });
+if ($("#history").classList.contains("active")) window.showTimeline();
+</script>
+</body>
+</html>
